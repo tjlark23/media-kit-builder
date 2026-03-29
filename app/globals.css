@@ -1,0 +1,12 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'DM Sans', sans-serif; background: #0a1628; color: #fff; min-height: 100vh; }
+input, textarea, select, button { font-family: 'DM Sans', sans-serif; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn .25s ease forwards; }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #060e1a; }
+::-webkit-scrollbar-thumb { background: #1a2a3a; border-radius: 3px; }
+input[type="color"] { -webkit-appearance: none; border: none; cursor: pointer; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
