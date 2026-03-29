@@ -1,10 +1,15 @@
 # Media Kit Builder
 
 ## What This Is
-A media kit generator tool for newsletter publishers (built for Local Media HQ). Multi-step wizard UI collects brand info, metrics, audience data, pricing, and testimonials, then sends a detailed prompt to a Supabase Edge Function that uses Claude AI to generate a complete, self-contained HTML media kit file. Supports 1-6 newsletter brands per kit with per-brand logos, colors, and metrics.
+A media kit generator tool for newsletter publishers (built for Local Media HQ). Next.js app with a 6-step wizard UI that collects brand info, metrics, audience data, pricing, and testimonials, then calls a Supabase Edge Function (Claude AI) to generate a complete, self-contained HTML media kit file. Supports 1-6 newsletter brands per kit with per-brand logos, colors, and metrics. Kits are saved to Supabase and can be published with shareable URLs.
 
 ## Work Mode
-A
+B
+
+## Live URLs
+- Dashboard: https://mediakit.localmediahq.com
+- Builder: https://mediakit.localmediahq.com/builder
+- Public kits: https://mediakit.localmediahq.com/kit/[slug]
 
 ## Design Style
 Dark SaaS tool aesthetic:
@@ -17,33 +22,38 @@ Dark SaaS tool aesthetic:
 - Dark scrollbar, subtle fade-in animations
 
 ## Tech Stack
-- Single HTML file (media-kit-builder-v3.html)
-- React 18 + ReactDOM via CDN (production builds)
-- Babel Standalone CDN for in-browser JSX transpilation
-- Custom CSS (no Tailwind) - inline styles + style block
-- Supabase Edge Function backend at ydcjljkehjqqshftktth.supabase.co/functions/v1/generate-media-kit
-- No build process, no npm, no node_modules
+- Next.js 16 (App Router) with React 18
+- TypeScript
+- Supabase (project: ydcjljkehjqqshftktth / local-media-hq)
+- Supabase Edge Function `generate-media-kit` for AI generation
+- Vercel hosting (leander-scoop team)
+- GitHub: tjlark23/media-kit-builder
+- No Tailwind - custom CSS with inline React styles
 
 ## How To Run
-Open `media-kit-builder-v3.html` directly in a browser. No server required for the UI. The generate function calls the Supabase Edge Function (requires the function to be deployed and running).
+- Local: `npm run dev` (requires .env.local with Supabase credentials)
+- Production: Auto-deploys from GitHub main branch via Vercel
 
 ## Project-Specific Rules
-1. Mode A with React CDN - not a standard React project. No npm/node/build tools.
-2. Babel transpiles JSX in-browser - this is intentional for simplicity. Do not convert to compiled React.
-3. The Supabase Edge Function handles AI generation - do not modify the endpoint URL without verifying the function.
-4. Supabase project ID: ydcjljkehjqqshftktth - verify Edge Function is deployed before testing generation.
-5. All styling is inline React styles or in the single style block. No external CSS files.
-6. Generated media kits are self-contained HTML files downloaded by the user - they are separate from this builder tool.
+1. All styling is inline React styles or in globals.css. No Tailwind.
+2. The Supabase Edge Function handles AI generation - do not modify the endpoint URL without verifying.
+3. Supabase project ID: ydcjljkehjqqshftktth
+4. Generated media kits are self-contained HTML files rendered in iframes on public pages.
+5. The public kit page (/kit/[slug]) has no auth - sponsors just click the link.
 
 ## Protected Scope
 - Supabase Edge Function endpoint URL and project ID
-- Media kit prompt structure (buildPrompt function) - changes affect generated output quality
+- Media kit prompt structure (buildPrompt function in BuilderClient.tsx)
 - 6-step wizard flow order: Sections > Brands > Metrics > Audience > Pricing > Generate
 - Default form values and section definitions (SECTIONS array)
+- Database schema (media_kits table structure)
 
-## Known Issues
-- React + Babel CDN approach is slower initial load than compiled React - acceptable for this internal tool
-- Edge Function requires valid Supabase project to be running for generation to work
-- No production hosting for the frontend - runs as a local file
-- No error handling for Edge Function auth/CORS issues
-- Color pickers and logo uploads use base64 encoding which inflates prompt size for multi-brand kits
+## Key Files
+- `app/builder/BuilderClient.tsx` - The main wizard component (all 6 steps + save/load)
+- `app/page.tsx` - Dashboard listing saved kits
+- `app/kit/[slug]/page.tsx` - Public shareable kit page
+- `app/api/kits/route.ts` - Kit CRUD (list + create)
+- `app/api/kits/[id]/route.ts` - Kit CRUD (get + update + delete)
+- `app/api/generate/route.ts` - Proxy to Supabase Edge Function
+- `lib/supabase.ts` - Supabase client
+- `media-kit-builder-v3.html` - Original prototype (kept for reference)

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { buildMediaKitHTML } from "@/lib/template";
 
 const SECTIONS = [
   { id:"hero",         label:"Hero",                 desc:"Headline, key stats, logo display",       required:true },
@@ -14,7 +15,7 @@ const SECTIONS = [
   { id:"cta",          label:"Contact / CTA",        desc:"Final call to action + contact form",      required:true },
 ];
 
-const STEPS = ["Sections","Brands","Metrics","Audience","Pricing","Generate"];
+const STEPS = ["Sections","Brands","Metrics","Audience","Pricing","Preview"];
 
 const emptyBrand = () => ({
   name:"", market:"", subscribers:"", frequency:"", openRate:"",
@@ -156,9 +157,7 @@ function MetricRow({m, onUpdate, onRemove, onMove, isFirst, isLast}:any) {
 export default function BuilderClient({ kitId }: { kitId?: string }) {
   const [step,setStep] = useState(0);
   const [form,setForm] = useState(defaultForm);
-  const [generating,setGenerating] = useState(false);
   const [generated,setGenerated] = useState<string|null>(null);
-  const [error,setError] = useState<string|null>(null);
   const [saving,setSaving] = useState(false);
   const [saveStatus,setSaveStatus] = useState<string|null>(null);
   const [currentKitId,setCurrentKitId] = useState<string|null>(kitId || null);
@@ -237,123 +236,10 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
 
   const activeBrands = form.brands.slice(0,form.brandCount);
 
-  const buildPrompt = () => {
-    const f=form as any;
-    const brandLines=activeBrands.map((b:any,i:number)=>
-      `Brand ${i+1}: "${b.name||"Unnamed"}" | Market: ${b.market||"TBD"} | ${b.subscribers||"?"} subscribers | ${b.frequency||"?"} | ${b.openRate||"?"}% open rate | Primary: ${b.primaryColor} | Accent: ${b.accentColor} | Dark bg: ${b.darkColor} | Logo: ${b.logoB64?"PROVIDED":"none"}`
-    ).join("\n");
-
-    const logoLines=[
-      ...activeBrands.filter((b:any)=>b.logoB64).map((b:any,i:number)=>`LOGO_BRAND_${i+1}_BASE64:${b.logoB64}`),
-      f.kitLogoB64 ? `KIT_NAV_LOGO_BASE64:${f.kitLogoB64}` : ""
-    ].filter(Boolean).join("\n\n");
-
-    const metricLines=f.metrics.map((m:any)=>`${m.label}: ${m.value||"TBD"} (color:${m.color}, hero:${m.isHero})`).join("\n");
-
-    const brandMetricLines=f.separateBrandMetrics
-      ? activeBrands.map((b:any,i:number)=>{
-          const bm=f.brandMetrics[i]||f.metrics;
-          return `${b.name||"Brand "+(i+1)} metrics:\n`+bm.map((m:any)=>`  ${m.label}: ${m.value||"TBD"} (color:${m.color}, hero:${m.isHero})`).join("\n");
-        }).join("\n")
-      : "Use combined metrics only (no per-brand tabs)";
-
-    const pricingLines=f.pricingMode==="full"
-      ? f.pricing.map((p:any)=>{
-          let line=`${p.unit} | Bundle: ${p.bundle||"TBD"}`;
-          if(f.brandCount>1) line+=` | `+activeBrands.map((b:any,i:number)=>`${b.name||"Brand "+(i+1)}: ${p.b[i]||"TBD"}`).join(" | ");
-          return line;
-        }).join("\n")
-      : "PRICING MODE: on-request - show contact us instead";
-
-    const testiLines=f.testimonials.filter((t:any)=>t.quote).map((t:any)=>`"${t.quote}" - ${t.name}, ${t.company}`).join("\n")
-      ||"Use 2 realistic placeholder testimonials from local advertisers";
-
-    return `Build a complete professional single-file HTML media kit for a local newsletter brand. Output ONLY the raw HTML. No explanation, no markdown fences. Start with <!DOCTYPE html>.
-
-SECTIONS TO INCLUDE (in this order): ${f.selectedSections.join(", ")}
-
-KIT TITLE (top-left nav): ${f.kitTitle||"My Newsletter"}
-NAV LOGO: ${f.kitLogoB64?"PROVIDED as KIT_NAV_LOGO_BASE64 below":"none - use text title only"}
-
-BRANDS:
-${brandLines}
-
-COMBINED STATS:
-Subscribers: ${f.combinedSubs||"sum of brands"}
-Tagline: ${f.combinedTagline||"The most engaged local audience in the market"}
-Weekly impressions: ${f.weeklyImpressions||"calculate from brands"}
-Contact email: ${f.contactEmail||"hello@newsletter.com"}
-
-PERFORMANCE METRICS (custom - use exactly these):
-${metricLines}
-
-BRAND-SEPARATED METRICS:
-${brandMetricLines}
-Separate brand tabs: ${f.separateBrandMetrics?"YES - show All tab plus one tab per brand":"NO - show one unified metrics section, no tabs"}
-
-AUDIENCE DATA:
-${f.surveyData||"Use realistic placeholders: 65% female, 70% HHI $100K+, 60% homeowners, 18% business owners"}
-
-PRICING:
-${pricingLines}
-
-TESTIMONIALS:
-${testiLines}
-
-${logoLines?`LOGO DATA:\n${logoLines}`:""}
-
-DESIGN RULES - follow exactly:
-- Google Fonts CDN: Bebas Neue (headlines) + DM Sans (body)
-- Primary: ${f.brands[0]?.primaryColor||"#4A90D9"} | Accent: ${f.brands[0]?.accentColor||"#E8821A"} | Dark bg: ${f.brands[0]?.darkColor||"#0f1e30"}
-- SECTION RHYTHM - never two dark or two light sections in a row: Hero=#111 dark, Meet=white, Metrics=dark blue, Reader=white, WhyAds=dark blue, Placements=#111 dark, Pricing=#F7F4EF off-white, Testimonials=white, CTA=accent color
-- ZERO em dashes anywhere in the entire file. Use commas or hyphens only.
-- Nav: ${f.kitLogoB64?"show nav logo image (base64 embedded) on left":"show kit title text on left"} + orange CTA button right that opens contact modal
-- All logos embedded as base64 data URIs, never file paths
-- All font sizes use clamp() - no fixed px font sizes
-- Single file: all CSS in style block, all JS in one script block before /body
-- Mobile first, responsive breakpoints at 640px and 900px
-- Scroll reveal with IntersectionObserver on all sections (.reveal class, add .on when intersecting)
-
-HERO: Two-column desktop (text+stats left, logo grid right). Logo grid scales by brand count: 1=large, 2=side by side, 3=2 on top 1 below, 4=2x2, 5=3+2, 6=3x2. Hero stats: show only metrics where isHero=true, with count-up animation. Logo images: no black borders, border-radius 12px, subtle bg.
-
-METRICS SECTION:
-- If separate tabs: tabbed interface with All Brands tab (default) plus one tab per brand. Use the combined metrics for All tab, brand-specific metrics for each brand tab.
-- If no separate tabs: clean grid of metric cards, no tabs.
-- Card types: blue-card (background rgba(74,144,217,.1) border rgba(74,144,217,.25)), orange-card (background rgba(232,130,26,.1) border rgba(232,130,26,.25)), neutral-card (background rgba(255,255,255,.05) border rgba(255,255,255,.1))
-- Hero metrics get large cards (font-size clamp(48px,6vw,72px)). Non-hero metrics get mini cards (font-size clamp(28px,4vw,40px)).
-- Layout: hero cards in 3-col grid first, then mini cards in 4-col grid below.
-
-WHY ADS: Five full-bleed cards using negative horizontal margin to extend edge to edge. Desktop: grid-template-columns repeat(5,1fr), gap 2px. Each card: big orange number (01-05), Bebas Neue title, body paragraph. Dark glass style cards. Content:
-01 No Banner Blindness - Readers chose to open this. Active attention - not a passive scroll.
-02 A Trusted Environment - We curate every advertiser. That trust transfers to you on day one.
-03 3 to 5x Higher Click Rates - Newsletter ads average 7 to 11% CTR. Display ads hit 0.1%.
-04 Complete Transparency - Guaranteed impression counts, verified lists. No black-box metrics.
-05 Hyper-Local Only - Not the whole internet. Just your specific community.
-
-PLACEMENTS: Dark (#111) background. Six cards 3-col grid. Top border accent per card type. No pricing on cards. Each: badge + Bebas name (24px) + description + arrow-bullet feature list.
-
-PRICING (if full): Tabbed by market. Row layout each row: left side has colored dot + name + description, right side has price right-aligned + period below + bundle savings note in blue if multi-brand.
-
-CONTACT MODAL: Opens from nav CTA and bottom CTA buttons. Fields: First+Last (2-col), Email, Phone, Business Name, Industry (text input, NOT a select/dropdown), Comments textarea. Web3Forms action URL with comment showing where to add access key. Show success state after submit, hide form.
-
-Output the complete self-contained HTML file now. Start with <!DOCTYPE html>.`;
-  };
-
-  const generate = async () => {
-    setGenerating(true); setError(null); setGenerated(null);
-    try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ prompt: buildPrompt() })
-      });
-      const data = await res.json();
-      if(data.error) throw new Error(data.error.message || data.error);
-      let html=(data.html||"").trim();
-      if(!html.startsWith("<!")) throw new Error("Unexpected response - try again.");
-      setGenerated(html);
-    } catch(err:any){ setError(err.message); }
-    finally{ setGenerating(false); }
+  // Instant template rendering - no AI, no API call
+  const generatePreview = () => {
+    const html = buildMediaKitHTML(form);
+    setGenerated(html);
   };
 
   const save = async () => {
@@ -403,7 +289,7 @@ Output the complete self-contained HTML file now. Start with <!DOCTYPE html>.`;
     a.click(); URL.revokeObjectURL(url);
   };
 
-  const preview = () => {
+  const openPreview = () => {
     if (!generated) return;
     const blob=new Blob([generated],{type:"text/html"});
     window.open(URL.createObjectURL(blob),"_blank");
@@ -743,14 +629,14 @@ Output the complete self-contained HTML file now. Start with <!DOCTYPE html>.`;
             </div>
           )}
 
-          {/* STEP 5 - Generate */}
+          {/* STEP 5 - Preview */}
           {step===5 && (
             <div style={{textAlign:"center"}}>
               <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:52,marginBottom:8}}>
-                <span style={{color:"#4A90D9"}}>READY</span> TO BUILD
+                <span style={{color:"#4A90D9"}}>PREVIEW</span> YOUR KIT
               </h2>
               <p style={{color:"#3a5070",fontSize:14,maxWidth:440,margin:"0 auto 32px",lineHeight:1.65}}>
-                Claude will generate your complete, self-contained media kit HTML file. Usually takes 30 to 60 seconds.
+                Your media kit is ready to preview. Click below to see it instantly.
               </p>
 
               <div style={{...S.card,textAlign:"left",maxWidth:500,margin:"0 auto 28px"}}>
@@ -771,41 +657,26 @@ Output the complete self-contained HTML file now. Start with <!DOCTYPE html>.`;
                 ))}
               </div>
 
-              {!generating&&!generated&&(
-                <button onClick={generate}
+              {!generated&&(
+                <button onClick={generatePreview}
                   style={{padding:"15px 48px",borderRadius:6,border:"none",background:"#E8821A",
                     color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",letterSpacing:1,
                     boxShadow:"0 4px 24px rgba(232,130,26,.3)"}}>
-                  GENERATE MEDIA KIT
+                  PREVIEW MEDIA KIT
                 </button>
               )}
 
-              {generating&&(
-                <div>
-                  <div style={{width:44,height:44,border:"3px solid rgba(255,255,255,.07)",borderTop:"3px solid #E8821A",
-                    borderRadius:"50%",margin:"0 auto 14px",animation:"spin 1s linear infinite"}}/>
-                  <div style={{color:"#3a5070",fontSize:13}}>Building your media kit...</div>
-                </div>
-              )}
-
-              {error&&(
-                <div style={{padding:14,background:"rgba(255,60,60,.07)",border:"1px solid rgba(255,60,60,.15)",
-                  borderRadius:7,color:"#ff7070",fontSize:13,maxWidth:480,margin:"16px auto 0"}}>
-                  {error}
-                </div>
-              )}
-
-              {generated&&!generating&&(
+              {generated&&(
                 <div>
                   <div style={{padding:"10px 20px",background:"rgba(60,217,120,.07)",border:"1px solid rgba(60,217,120,.18)",
                     borderRadius:6,color:"#4ad990",fontSize:13,marginBottom:20,display:"inline-block"}}>
-                    Generated successfully.
+                    Ready to preview.
                   </div>
-                  <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-                    <button onClick={preview}
+                  <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:24}}>
+                    <button onClick={openPreview}
                       style={{padding:"11px 26px",borderRadius:5,border:"1px solid #4A90D9",
                         background:"transparent",color:"#4A90D9",fontWeight:700,fontSize:13,cursor:"pointer"}}>
-                      Preview in New Tab
+                      Open in New Tab
                     </button>
                     <button onClick={download}
                       style={{padding:"11px 26px",borderRadius:5,border:"none",background:"#E8821A",
@@ -817,11 +688,15 @@ Output the complete self-contained HTML file now. Start with <!DOCTYPE html>.`;
                         background:"rgba(74,217,144,.1)",color:"#4ad990",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                       Save Kit
                     </button>
-                    <button onClick={()=>{setGenerated(null);setError(null);}}
+                    <button onClick={()=>{generatePreview();}}
                       style={{padding:"11px 26px",borderRadius:5,border:"1px solid #1a2a3a",
                         background:"transparent",color:"#4a6080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
-                      Regenerate
+                      Refresh Preview
                     </button>
+                  </div>
+                  {/* Inline preview */}
+                  <div style={{...S.card,padding:0,overflow:"hidden",borderRadius:12,height:500}}>
+                    <iframe srcDoc={generated} style={{width:"100%",height:"100%",border:"none",borderRadius:12}} title="Media Kit Preview"/>
                   </div>
                 </div>
               )}
