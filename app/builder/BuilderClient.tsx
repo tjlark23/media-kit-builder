@@ -5,17 +5,17 @@ import { buildMediaKitHTML } from "@/lib/template";
 
 const SECTIONS = [
   { id:"hero",         label:"Hero",                 desc:"Headline, key stats, logo display",       required:true },
-  { id:"meet",         label:"Meet the Brands",      desc:"Brand intro and brand cards" },
+  { id:"meet",         label:"Meet the Brands",      desc:"Brand intro and brand cards (hidden for 1-brand kits)" },
   { id:"metrics",      label:"Performance Metrics",  desc:"Fully custom metrics - subscribers, social, web, anything", recommended:true },
   { id:"reader",       label:"Reader Profile",       desc:"Demographics and survey data" },
-  { id:"why",          label:"Why Newsletter Ads",   desc:"Universal - use for every kit",            recommended:true },
-  { id:"placements",   label:"Pick Your Placement",  desc:"Ad unit cards with descriptions" },
-  { id:"pricing",      label:"Pricing",              desc:"Tabbed pricing by market" },
+  { id:"why_news",     label:"Why Newsletters",      desc:"Universal newsletter advertising benefits - pre-filled", recommended:true },
+  { id:"why_us",       label:"Why [Location]",       desc:"Location-specific pitch to advertisers - editable", recommended:true },
+  { id:"pricing",      label:"Pricing",              desc:"Placement cards or on-request quote form" },
   { id:"testimonials", label:"Testimonials",         desc:"Advertiser quotes" },
   { id:"cta",          label:"Contact / CTA",        desc:"Final call to action + contact form",      required:true },
 ];
 
-const STEPS = ["Sections","Brands","Metrics","Audience","Pricing","Preview"];
+const STEPS = ["Sections","Brands","Metrics","Audience","Why Us","Pricing","Preview"];
 
 const emptyBrand = () => ({
   name:"", market:"", subscribers:"", frequency:"", openRate:"",
@@ -29,7 +29,7 @@ const emptyMetric = () => ({
 });
 
 const defaultForm = {
-  selectedSections:["hero","meet","metrics","reader","why","placements","pricing","testimonials","cta"],
+  selectedSections:["hero","meet","metrics","reader","why_news","why_us","pricing","testimonials","cta"],
   brandCount:1,
   brands:[emptyBrand()],
   kitTitle:"Henderson HQ x West Vegas HQ",
@@ -55,6 +55,12 @@ const defaultForm = {
   testimonials:[
     {quote:"",name:"",company:""},
     {quote:"",name:"",company:""},
+  ],
+  whyUsItems:[
+    {title:"", body:""},
+    {title:"", body:""},
+    {title:"", body:""},
+    {title:"", body:""},
   ],
 };
 
@@ -225,6 +231,13 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
 
   const updateTesti = (i:number,k:string,v:any) => {
     const t=[...form.testimonials]; t[i]={...t[i],[k]:v}; set("testimonials",t);
+  };
+
+  const updateWhyUs = (i:number,k:string,v:any) => {
+    const items=[...(form.whyUsItems||[])];
+    while(items.length < 4) items.push({title:"",body:""});
+    items[i]={...items[i],[k]:v};
+    set("whyUsItems",items);
   };
 
   const toggleSection = (id:string) => {
@@ -575,8 +588,57 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
             </div>
           )}
 
-          {/* STEP 4 - Pricing */}
+          {/* STEP 4 - Why Us (location-specific pitch) */}
           {step===4 && (
+            <div>
+              <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:38,marginBottom:6}}>WHY {form.brands[0]?.market ? form.brands[0].market.toUpperCase() : "THIS MARKET"}</h2>
+              <p style={{color:"#3a5070",fontSize:13,marginBottom:24}}>
+                Write 4 reasons this specific market is valuable to advertisers. This is the pitch that makes an out-of-town brand say &quot;yes.&quot; Leave blank to use generic location-agnostic copy.
+              </p>
+
+              <div style={S.card}>
+                {(form.whyUsItems && form.whyUsItems.length ? form.whyUsItems : [0,1,2,3].map(()=>({title:"",body:""}))).slice(0,4).map((w:any,i:number)=>(
+                  <div key={i} style={{marginBottom:18,paddingBottom:18,borderBottom:i<3?"1px solid rgba(255,255,255,.05)":"none"}}>
+                    <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:14,color:"#E8821A",letterSpacing:1,marginBottom:10}}>
+                      REASON 0{i+1}
+                    </div>
+                    <Field
+                      label="Title"
+                      value={w.title||""}
+                      onChange={(v:any)=>updateWhyUs(i,"title",v)}
+                      placeholder={[
+                        "Fastest-Growing County in Texas",
+                        "Upper-Middle-Class Families",
+                        "New to Town, Looking for Recommendations",
+                        "Tight-Knit Community, Big Purchasing Power"
+                      ][i]}
+                    />
+                    <div style={{marginTop:10}}>
+                      <Label c="Body"/>
+                      <textarea
+                        value={w.body||""}
+                        onChange={(e:any)=>updateWhyUs(i,"body",e.target.value)}
+                        placeholder={[
+                          "Williamson County grew 44% from 2010 to 2020 and continues to grow 3 to 4% per year. You are advertising to a market still picking its go-to brands.",
+                          "Median household income exceeds $100k. Family-oriented, home-owning, and looking for quality local businesses, schools, services, and experiences.",
+                          "Over 40% of our readers have lived here less than 5 years. They are actively forming loyalty to local restaurants, dentists, gyms, and service providers right now.",
+                          "WilCo residents spend local because they care about their community. High word-of-mouth. A good ad here does not just convert a reader, it converts their neighbors too."
+                        ][i]}
+                        style={{...S.input,minHeight:80,resize:"vertical"}}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{marginTop:16,padding:"12px 14px",background:"rgba(74,144,217,.05)",border:"1px solid rgba(74,144,217,.12)",borderRadius:6,fontSize:12,color:"#4a6080",lineHeight:1.6}}>
+                Tip: Hit all 4 with facts an advertiser cares about: growth rate, demographics, buying power, audience trust. Section title auto-fills from the first brand&apos;s market.
+              </div>
+            </div>
+          )}
+
+          {/* STEP 5 - Pricing */}
+          {step===5 && (
             <div>
               <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:38,marginBottom:6}}>PRICING</h2>
               <p style={{color:"#3a5070",fontSize:13,marginBottom:20}}>Show specific prices or send advertisers to a contact form instead.</p>
@@ -629,8 +691,8 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
             </div>
           )}
 
-          {/* STEP 5 - Preview */}
-          {step===5 && (
+          {/* STEP 6 - Preview */}
+          {step===6 && (
             <div style={{textAlign:"center"}}>
               <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:52,marginBottom:8}}>
                 <span style={{color:"#4A90D9"}}>PREVIEW</span> YOUR KIT
@@ -711,8 +773,8 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                 color:step===0?"#1a2a3a":"#4a6080",cursor:step===0?"default":"pointer",fontSize:13,fontWeight:600}}>
               Back
             </button>
-            {step<5&&(
-              <button onClick={()=>setStep(s=>Math.min(5,s+1))}
+            {step<6&&(
+              <button onClick={()=>setStep(s=>Math.min(6,s+1))}
                 style={{padding:"9px 28px",borderRadius:5,border:"none",background:"#4A90D9",
                   color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                 Next
