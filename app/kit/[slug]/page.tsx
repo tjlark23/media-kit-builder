@@ -26,15 +26,17 @@ export default async function PublicKit({ params }: { params: Promise<{ slug: st
 document.addEventListener('click', function(e) {
   var btn = e.target.closest('button, a');
   if (!btn) return;
-  var text = (btn.textContent || '').trim().toUpperCase();
-  if (text === 'GET IN TOUCH' || text === 'CONTACT US FOR RATES') {
+  var text = (btn.textContent || '').trim().toUpperCase().replace(/[^A-Z ]/g, '').trim();
+  var triggers = ['GET IN TOUCH', 'CONTACT US FOR RATES', "LETS TALK", 'TALK TO US', 'PARTNER WITH US', 'EMAIL US', 'START THE CONVERSATION', 'BOOK A CALL'];
+  if (triggers.indexOf(text) !== -1) {
     e.preventDefault();
+    e.stopPropagation();
     window.parent.postMessage({ type: 'scrollToContact' }, '*');
+    return false;
   }
 });
-// Also intercept the contact modal from opening
-var modal = document.getElementById('contact-modal');
-if (modal) modal.remove();
+// Remove the contact modal from opening inside the iframe (supports both id conventions)
+['contact-modal', 'modal'].forEach(function(id){ var m = document.getElementById(id); if (m) m.remove(); });
 </script>`;
 
   const htmlWithInjection = kit.generated_html.replace(
