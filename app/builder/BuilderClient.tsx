@@ -308,6 +308,23 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
     window.open(URL.createObjectURL(blob),"_blank");
   };
 
+  const downloadPDF = () => {
+    if (!generated) return;
+    const blob = new Blob([generated], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, "_blank");
+    if (!w) {
+      alert("Popup blocked. Please allow popups for this site to export PDF.");
+      URL.revokeObjectURL(url);
+      return;
+    }
+    // Wait for fonts + images to load, then trigger the print dialog.
+    // User saves as PDF from the browser's print dialog.
+    const trigger = () => { try { w.focus(); w.print(); } catch(e) { /* user closed window */ } };
+    setTimeout(trigger, 1500);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+
   if (loadingKit) {
     return (
       <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -744,6 +761,11 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                       style={{padding:"11px 26px",borderRadius:5,border:"none",background:"#E8821A",
                         color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                       Download HTML
+                    </button>
+                    <button onClick={downloadPDF}
+                      style={{padding:"11px 26px",borderRadius:5,border:"1px solid #E8821A",
+                        background:"transparent",color:"#E8821A",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                      Download PDF
                     </button>
                     <button onClick={save}
                       style={{padding:"11px 26px",borderRadius:5,border:"1px solid rgba(74,217,144,.3)",
