@@ -964,12 +964,10 @@ nav {
   line-height: 1.05;
   min-height: 110px;
   font-size: clamp(14px, 1.5vw, 18px);
-  background: var(--yellow);
+  background: var(--white);
   transition: all .15s;
 }
 .logo-cell:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--black); }
-.logo-cell:nth-child(even) { background: var(--orange); color: var(--white); }
-.logo-cell:nth-child(3n+3) { background: var(--gray); color: var(--black); }
 
 .logo-grid.n-1 .logo-cell { min-height: 180px; font-size: clamp(24px, 3vw, 36px); }
 .logo-grid.n-3 .logo-cell:nth-child(3) { min-height: 90px; }
@@ -1050,12 +1048,7 @@ nav {
 .brand-card .c-tr { top: -8px; right: -8px; }
 .brand-card .c-bl { bottom: -8px; left: -8px; }
 .brand-card .c-br { bottom: -8px; right: -8px; }
-.brand-logo { width: 56px; height: 56px; background: var(--black); color: var(--yellow); display:flex; align-items:center; justify-content:center; font-weight: 900; font-size: 18px; letter-spacing: -0.02em; margin-bottom: 16px; border: var(--border); overflow:hidden; }
-.brand-card:nth-child(2) .brand-logo { background: var(--orange); color: var(--white); }
-.brand-card:nth-child(3) .brand-logo { background: var(--yellow); color: var(--black); }
-.brand-card:nth-child(4) .brand-logo { background: var(--gray); color: var(--black); }
-.brand-card:nth-child(5) .brand-logo { background: var(--black); color: var(--orange); }
-.brand-card:nth-child(6) .brand-logo { background: var(--orange); color: var(--yellow); }
+.brand-logo { width: 56px; height: 56px; background: var(--white); color: var(--black); display:flex; align-items:center; justify-content:center; font-weight: 900; font-size: 18px; letter-spacing: -0.02em; margin-bottom: 16px; border: var(--border); overflow:hidden; }
 .brand-tags { display:flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
 .brand-tag { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border: 2px solid var(--black); background: var(--white); }
 .brand-name { font-size: 28px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 4px; line-height: 1.05; }
