@@ -8,6 +8,7 @@ type BrandData = {
   frequency?: string;
   openRate?: string;
   logoB64?: string;
+  logoMime?: string;
 };
 
 type MetricData = {
@@ -43,6 +44,7 @@ type FormData = {
   brands?: BrandData[];
   kitTitle?: string;
   kitLogoB64?: string;
+  kitLogoMime?: string;
   combinedSubs?: string;
   combinedTagline?: string;
   weeklyImpressions?: string;
@@ -91,7 +93,7 @@ export function buildMediaKitHTML(form: FormData): string {
 
   // ---------- Nav ----------
   const navLogoInner = f.kitLogoB64
-    ? `<img src="data:image/png;base64,${f.kitLogoB64}" alt="${esc(kitTitle)}" style="height:40px;width:auto;display:block">`
+    ? `<img src="data:${f.kitLogoMime || "image/png"};base64,${f.kitLogoB64}" alt="${esc(kitTitle)}" style="height:40px;width:auto;display:block">`
     : splitTitleForNav(kitTitle);
 
   const navHTML = `
@@ -260,13 +262,16 @@ export function buildMediaKitHTML(form: FormData): string {
     // Pad to 4
     const padded = [...items];
     while (padded.length < 4) padded.push(WHY_US_DEFAULTS[padded.length] || { title: "", body: "" });
-    const location = brands[0]?.market || "Us";
+    const whyUsLabel =
+      brandCount > 1
+        ? (f.kitTitle || "Our Network")
+        : (brands[0]?.name || "Us");
     whyUsHTML = `
   <section id="why-us" class="section yellow-bg">
     <div class="container">
       <div class="section-head reveal">
-        <h2 class="section-title">Why <span class="accent">${esc(location)}</span></h2>
-        <p class="section-sub">The market fundamentals that make this audience especially valuable.</p>
+        <h2 class="section-title">Why <span class="accent">${esc(whyUsLabel)}</span></h2>
+        <p class="section-sub">What makes us different from every other place you could spend your ad budget.</p>
       </div>
       <div class="why-grid">
         ${padded.map((w, i) => buildWhyItem(padNumber(i + 1), w.title || "", w.body || "", i)).join("")}
@@ -496,7 +501,7 @@ function buildLogoGrid(brands: BrandData[], n: number): string {
   const cells = brands
     .map((b) => {
       if (b.logoB64) {
-        return `<div class="logo-cell"><img src="data:image/png;base64,${b.logoB64}" alt="${escapeForHTML(b.name || "")}" style="max-height:80px;max-width:100%;object-fit:contain"></div>`;
+        return `<div class="logo-cell"><img src="data:${b.logoMime || "image/png"};base64,${b.logoB64}" alt="${escapeForHTML(b.name || "")}" style="max-height:80px;max-width:100%;object-fit:contain"></div>`;
       }
       const name = (b.name || "Brand").toUpperCase();
       return `<div class="logo-cell">${escapeForHTML(name)}</div>`;
@@ -548,7 +553,7 @@ function buildBrandCard(b: BrandData, i: number): string {
   if (b.frequency) statParts.push(`<div><div class="brand-stat-v">${escapeForHTML(b.frequency)}</div><div class="brand-stat-l">Frequency</div></div>`);
 
   const logoCell = b.logoB64
-    ? `<div class="brand-logo" style="padding:4px"><img src="data:image/png;base64,${b.logoB64}" alt="${escapeForHTML(b.name || "")}" style="max-width:100%;max-height:100%;object-fit:contain"></div>`
+    ? `<div class="brand-logo" style="padding:4px"><img src="data:${b.logoMime || "image/png"};base64,${b.logoB64}" alt="${escapeForHTML(b.name || "")}" style="max-width:100%;max-height:100%;object-fit:contain"></div>`
     : `<div class="brand-logo">${escapeForHTML(initials)}</div>`;
 
   return `
@@ -673,20 +678,20 @@ const WHY_NEWS_ITEMS = [
 
 const WHY_US_DEFAULTS: WhyItem[] = [
   {
-    title: "A Market Your Sponsors Want",
-    body: "Our readers are concentrated in one tight geographic area, making their attention unusually valuable to local and regional brands.",
+    title: "Real Attention, Not Impressions",
+    body: "Our readers actively open and read every issue. This is not a banner ad on a page they scroll past. Your message gets focused, intentional attention from real people.",
   },
   {
-    title: "Local Loyalty, Real Purchase Power",
-    body: "These readers shop local, hire local, and recommend local. A single ad here ripples through community word-of-mouth.",
+    title: "Trusted Recommendations",
+    body: "We hand-pick every advertiser. Our audience trusts us, and that trust transfers to you. Being featured here is an endorsement, not an interruption.",
   },
   {
-    title: "Actively Growing Audience",
-    body: "We add new subscribers every week through paid acquisition and organic referrals, keeping our list fresh and engaged.",
+    title: "Measurable Results",
+    body: "We share transparent performance data after every campaign. You will know exactly how many people saw your ad, clicked, and engaged. No black box.",
   },
   {
-    title: "Tight-Knit, High-Trust Community",
-    body: "Readers know us, and they trust our recommendations. That trust transfers to advertisers we feature.",
+    title: "Built for Local Business",
+    body: "We are not a national ad network. Every subscriber lives in your service area. You are reaching the exact people who can walk through your door.",
   },
 ];
 

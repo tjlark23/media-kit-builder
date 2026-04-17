@@ -9,7 +9,7 @@ const SECTIONS = [
   { id:"metrics",      label:"Performance Metrics",  desc:"Fully custom metrics - subscribers, social, web, anything", recommended:true },
   { id:"reader",       label:"Reader Profile",       desc:"Demographics and survey data" },
   { id:"why_news",     label:"Why Newsletters",      desc:"Universal newsletter advertising benefits - pre-filled", recommended:true },
-  { id:"why_us",       label:"Why [Location]",       desc:"Location-specific pitch to advertisers - editable", recommended:true },
+  { id:"why_us",       label:"Why Us",               desc:"Your pitch for why advertisers should work with you - editable", recommended:true },
   { id:"pricing",      label:"Pricing",              desc:"Placement cards or on-request quote form" },
   { id:"testimonials", label:"Testimonials",         desc:"Advertiser quotes" },
   { id:"cta",          label:"Contact / CTA",        desc:"Final call to action + contact form",      required:true },
@@ -20,7 +20,7 @@ const STEPS = ["Sections","Brands","Metrics","Audience","Why Us","Pricing","Prev
 const emptyBrand = () => ({
   name:"", market:"", subscribers:"", frequency:"", openRate:"",
   primaryColor:"#4A90D9", accentColor:"#E8821A", darkColor:"#0f1e30",
-  logoB64:"", logoName:""
+  logoB64:"", logoName:"", logoMime:""
 });
 
 const emptyMetric = () => ({
@@ -33,7 +33,7 @@ const defaultForm = {
   brandCount:1,
   brands:[emptyBrand()],
   kitTitle:"Henderson HQ x West Vegas HQ",
-  kitLogoB64:"", kitLogoName:"",
+  kitLogoB64:"", kitLogoName:"", kitLogoMime:"",
   combinedSubs:"", combinedTagline:"", weeklyImpressions:"", contactEmail:"",
   metrics:[
     {id:"m1", label:"Subscribers",       value:"",  color:"blue",   isHero:true},
@@ -94,13 +94,19 @@ function ColorPicker({label, value, onChange}:any) {
   );
 }
 
-function LogoUpload({label, b64, name, onChange}:any) {
+function LogoUpload({label, b64, name, mime, onChange}:any) {
   const ref = useRef<HTMLInputElement>(null);
   const handle = (e:any) => {
     const file = e.target.files[0];
     if (!file) return;
     const r = new FileReader();
-    r.onload = ev => onChange((ev.target as any).result.split(",")[1], file.name);
+    r.onload = ev => {
+      const dataUrl = (ev.target as any).result as string;
+      const match = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
+      const fileMime = match ? match[1] : (file.type || "image/png");
+      const payload = match ? match[2] : dataUrl.split(",")[1];
+      onChange(payload, file.name, fileMime);
+    };
     r.readAsDataURL(file);
   };
   return (
@@ -111,10 +117,10 @@ function LogoUpload({label, b64, name, onChange}:any) {
           style={{padding:"8px 14px",borderRadius:4,border:"1.5px solid #08313a",background:"#fff",
             color:"#08313a",cursor:"pointer",fontSize:12,fontWeight:700,whiteSpace:"nowrap",
             boxShadow:"1px 1px 0 #08313a"}}>
-          {b64 ? "Change" : "Upload PNG"}
+          {b64 ? "Change" : "Upload Logo"}
         </button>
         {b64 && (
-          <img src={`data:image/png;base64,${b64}`} alt=""
+          <img src={`data:${mime || "image/png"};base64,${b64}`} alt=""
             style={{height:36,width:"auto",borderRadius:4,background:"#eef2f5",padding:2,border:"1px solid #c7d5e0"}}/>
         )}
         {name && <span style={{fontSize:11,color:"#e76f51",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>{name}</span>}
@@ -348,7 +354,7 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
         display:"flex",alignItems:"center",justifyContent:"space-between",height:56,flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {form.kitLogoB64
-            ? <img src={`data:image/png;base64,${form.kitLogoB64}`} alt="" style={{height:32,width:"auto",borderRadius:4}}/>
+            ? <img src={`data:${(form as any).kitLogoMime || "image/png"};base64,${form.kitLogoB64}`} alt="" style={{height:32,width:"auto",borderRadius:4}}/>
             : <>
                 <div style={{width:10,height:10,borderRadius:"50%",background:"#e76f51"}}/>
                 <span className="topbar-full" style={{fontWeight:900,fontSize:16,letterSpacing:2,textTransform:"uppercase" as const}}>
@@ -450,8 +456,8 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                 <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",marginBottom:14,letterSpacing:1.5,fontWeight:700,textTransform:"uppercase" as const}}>KIT NAVIGATION (TOP BAR)</div>
                 <div className="grid-form">
                   <Field label="Kit Title Text" value={form.kitTitle} onChange={(v:any)=>set("kitTitle",v)} placeholder="Henderson HQ x West Vegas HQ"/>
-                  <LogoUpload label="Nav Logo (replaces title text)" b64={form.kitLogoB64} name={form.kitLogoName}
-                    onChange={(b64:string,name:string)=>setForm((f:any)=>({...f,kitLogoB64:b64,kitLogoName:name}))}/>
+                  <LogoUpload label="Nav Logo (replaces title text)" b64={form.kitLogoB64} name={form.kitLogoName} mime={(form as any).kitLogoMime}
+                    onChange={(b64:string,name:string,mime:string)=>setForm((f:any)=>({...f,kitLogoB64:b64,kitLogoName:name,kitLogoMime:mime}))}/>
                 </div>
               </div>
 
@@ -482,8 +488,12 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                     <Field label="Subscriber Count" value={b.subscribers} onChange={(v:any)=>updateBrand(i,"subscribers",v)} placeholder="32,000"/>
                     <Field label="Send Frequency" value={b.frequency} onChange={(v:any)=>updateBrand(i,"frequency",v)} placeholder="3x weekly"/>
                     <Field label="Open Rate %" value={b.openRate} onChange={(v:any)=>updateBrand(i,"openRate",v)} placeholder="58"/>
-                    <LogoUpload label="Newsletter Logo" b64={b.logoB64} name={b.logoName}
-                      onChange={(b64:string,name:string)=>{updateBrand(i,"logoB64",b64);updateBrand(i,"logoName",name);}}/>
+                    <LogoUpload label="Newsletter Logo" b64={b.logoB64} name={b.logoName} mime={b.logoMime}
+                      onChange={(b64:string,name:string,mime:string)=>{
+                        const bs=[...form.brands];
+                        bs[i]={...bs[i],logoB64:b64,logoName:name,logoMime:mime};
+                        set("brands",bs);
+                      }}/>
                   </div>
                   <div className="grid-colors" style={{marginTop:14}}>
                     <ColorPicker label="Primary Color" value={b.primaryColor} onChange={(v:any)=>updateBrand(i,"primaryColor",v)}/>
@@ -638,15 +648,19 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
             </div>
           )}
 
-          {/* STEP 4 - Why Us (location-specific pitch) */}
+          {/* STEP 4 - Why Us (brand pitch) */}
           {step===4 && (
             <div>
               <Eyebrow text="Step 5"/>
               <h2 style={{fontWeight:900,fontSize:36,textTransform:"uppercase" as const,letterSpacing:1,marginBottom:6}}>
-                WHY <span style={{color:"#e76f51"}}>{form.brands[0]?.market ? form.brands[0].market.toUpperCase() : "THIS MARKET"}</span>
+                WHY <span style={{color:"#e76f51"}}>{
+                  form.brandCount > 1
+                    ? (form.kitTitle ? form.kitTitle.toUpperCase() : "OUR NETWORK")
+                    : (form.brands[0]?.name ? form.brands[0].name.toUpperCase() : "US")
+                }</span>
               </h2>
               <p style={{color:"#5a7a8a",fontSize:13,marginBottom:24}}>
-                Write 4 reasons this specific market is valuable to advertisers. This is the pitch that makes an out-of-town brand say &quot;yes.&quot; Leave blank to use generic location-agnostic copy.
+                Tell advertisers why they should work with you. What makes your newsletter special? Leave blank to use smart defaults.
               </p>
 
               <div style={S.card}>
@@ -660,10 +674,10 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                       value={w.title||""}
                       onChange={(v:any)=>updateWhyUs(i,"title",v)}
                       placeholder={[
-                        "Fastest-Growing County in Texas",
-                        "Upper-Middle-Class Families",
-                        "New to Town, Looking for Recommendations",
-                        "Tight-Knit Community, Big Purchasing Power"
+                        "Real Attention, Not Impressions",
+                        "Trusted Recommendations",
+                        "Measurable Results",
+                        "Built for Local Business"
                       ][i]}
                     />
                     <div style={{marginTop:10}}>
@@ -672,10 +686,10 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                         value={w.body||""}
                         onChange={(e:any)=>updateWhyUs(i,"body",e.target.value)}
                         placeholder={[
-                          "Williamson County grew 44% from 2010 to 2020 and continues to grow 3 to 4% per year. You are advertising to a market still picking its go-to brands.",
-                          "Median household income exceeds $100k. Family-oriented, home-owning, and looking for quality local businesses, schools, services, and experiences.",
-                          "Over 40% of our readers have lived here less than 5 years. They are actively forming loyalty to local restaurants, dentists, gyms, and service providers right now.",
-                          "WilCo residents spend local because they care about their community. High word-of-mouth. A good ad here does not just convert a reader, it converts their neighbors too."
+                          "Our readers actively open and read every issue. Your message gets focused, intentional attention from real people.",
+                          "We hand-pick every advertiser. Our audience trusts us, and that trust transfers to you. Being featured here is an endorsement, not an interruption.",
+                          "We share transparent performance data after every campaign. You will know exactly how many people saw your ad, clicked, and engaged. No black box.",
+                          "We are not a national ad network. Every subscriber lives in your service area. You are reaching the exact people who can walk through your door."
                         ][i]}
                         style={{...S.input,minHeight:80,resize:"vertical"}}
                       />
@@ -685,7 +699,7 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
               </div>
 
               <div style={{marginTop:16,padding:"12px 14px",background:"rgba(233,174,74,.08)",border:"1.5px solid #e9ae4a",borderRadius:6,fontSize:12,color:"#5a7a8a",lineHeight:1.6}}>
-                Tip: Hit all 4 with facts an advertiser cares about: growth rate, demographics, buying power, audience trust. Section title auto-fills from the first brand&apos;s market.
+                Tip: Focus on what makes your newsletter different from other ad channels. Section title auto-fills from your brand name.
               </div>
             </div>
           )}
