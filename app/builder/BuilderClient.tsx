@@ -65,10 +65,10 @@ const defaultForm = {
 };
 
 const S = {
-  input:{ background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.1)", borderRadius:6, padding:"9px 12px", color:"#fff", fontSize:13, outline:"none", width:"100%" },
-  card:{ background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.07)", borderRadius:10, padding:20 },
-  label:{ fontSize:11, fontWeight:700, color:"#4a6080", letterSpacing:1.2, textTransform:"uppercase" as const, display:"block", marginBottom:5 },
-  tag:{ padding:"5px 14px", borderRadius:4, fontSize:12, fontWeight:600, cursor:"pointer", border:"1px solid transparent", letterSpacing:.3 },
+  input:{ background:"#fff", border:"1.5px solid #08313a", borderRadius:4, padding:"9px 12px", color:"#08313a", fontSize:13, outline:"none", width:"100%" },
+  card:{ background:"#f8f9fa", border:"2px solid #08313a", borderRadius:6, padding:20, boxShadow:"2px 2px 0 #08313a" as const },
+  label:{ fontSize:11, fontWeight:700, color:"#08313a", letterSpacing:1.2, textTransform:"uppercase" as const, display:"block", marginBottom:5, fontFamily:"ui-monospace, monospace" },
+  tag:{ padding:"5px 14px", borderRadius:4, fontSize:12, fontWeight:600, cursor:"pointer", border:"1.5px solid #08313a", letterSpacing:.3 },
 };
 
 const Label = ({c}:{c:string}) => <span style={S.label}>{c}</span>;
@@ -77,9 +77,6 @@ const Field = ({label,value,onChange,placeholder,type="text",style={}}:any) => (
     <Label c={label}/>
     <input type={type} value={value} onChange={(e:any)=>onChange(e.target.value)} placeholder={placeholder} style={{...S.input,...style}}/>
   </div>
-);
-const G2 = ({children,cols=2,gap=14}:any) => (
-  <div style={{display:"grid",gridTemplateColumns:`repeat(${cols},1fr)`,gap}}>{children}</div>
 );
 
 function ColorPicker({label, value, onChange}:any) {
@@ -90,8 +87,8 @@ function ColorPicker({label, value, onChange}:any) {
         <input type="color" value={value} onChange={(e:any)=>onChange(e.target.value)}
           style={{width:36,height:34,borderRadius:5,background:"transparent"}}/>
         <input value={value} onChange={(e:any)=>onChange(e.target.value)}
-          style={{...S.input,width:90,fontFamily:"monospace",fontSize:12}}/>
-        <div style={{width:34,height:34,borderRadius:5,background:value,border:"1px solid rgba(255,255,255,.1)",flexShrink:0}}/>
+          style={{...S.input,width:90,fontFamily:"ui-monospace, monospace",fontSize:12}}/>
+        <div style={{width:34,height:34,borderRadius:5,background:value,border:"1.5px solid #08313a",flexShrink:0}}/>
       </div>
     </div>
   );
@@ -111,15 +108,16 @@ function LogoUpload({label, b64, name, onChange}:any) {
       <Label c={label}/>
       <div style={{display:"flex",alignItems:"center",gap:10,marginTop:2}}>
         <button onClick={()=>ref.current?.click()}
-          style={{padding:"8px 14px",borderRadius:5,border:"1px solid rgba(255,255,255,.12)",background:"rgba(255,255,255,.05)",
-            color:"#8a9ab0",cursor:"pointer",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>
+          style={{padding:"8px 14px",borderRadius:4,border:"1.5px solid #08313a",background:"#fff",
+            color:"#08313a",cursor:"pointer",fontSize:12,fontWeight:700,whiteSpace:"nowrap",
+            boxShadow:"1px 1px 0 #08313a"}}>
           {b64 ? "Change" : "Upload PNG"}
         </button>
         {b64 && (
           <img src={`data:image/png;base64,${b64}`} alt=""
-            style={{height:36,width:"auto",borderRadius:4,background:"rgba(255,255,255,.08)",padding:2}}/>
+            style={{height:36,width:"auto",borderRadius:4,background:"#eef2f5",padding:2,border:"1px solid #c7d5e0"}}/>
         )}
-        {name && <span style={{fontSize:11,color:"#4A90D9",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>{name}</span>}
+        {name && <span style={{fontSize:11,color:"#e76f51",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>{name}</span>}
         <input ref={ref} type="file" accept="image/*" onChange={handle} style={{display:"none"}}/>
       </div>
     </div>
@@ -128,13 +126,12 @@ function LogoUpload({label, b64, name, onChange}:any) {
 
 function MetricRow({m, onUpdate, onRemove, onMove, isFirst, isLast}:any) {
   return (
-    <div style={{display:"grid",gridTemplateColumns:"auto 1fr 1fr auto auto auto",gap:8,alignItems:"center",
-      padding:"10px 12px",background:"rgba(255,255,255,.04)",borderRadius:8,border:"1px solid rgba(255,255,255,.07)"}}>
+    <div className="metric-row">
       <div style={{display:"flex",flexDirection:"column",gap:3}}>
         <button onClick={onMove(-1)} disabled={isFirst}
-          style={{width:20,height:18,border:"none",background:"transparent",color:isFirst?"#1a2a3a":"#5a7090",cursor:isFirst?"default":"pointer",fontSize:10,lineHeight:1}}>&#9650;</button>
+          style={{width:20,height:18,border:"none",background:"transparent",color:isFirst?"#c7d5e0":"#08313a",cursor:isFirst?"default":"pointer",fontSize:10,lineHeight:1}}>&#9650;</button>
         <button onClick={onMove(1)} disabled={isLast}
-          style={{width:20,height:18,border:"none",background:"transparent",color:isLast?"#1a2a3a":"#5a7090",cursor:isLast?"default":"pointer",fontSize:10,lineHeight:1}}>&#9660;</button>
+          style={{width:20,height:18,border:"none",background:"transparent",color:isLast?"#c7d5e0":"#08313a",cursor:isLast?"default":"pointer",fontSize:10,lineHeight:1}}>&#9660;</button>
       </div>
       <input value={m.label} onChange={(e:any)=>onUpdate("label",e.target.value)}
         placeholder="e.g. Facebook Followers" style={{...S.input,fontSize:12}}/>
@@ -148,14 +145,14 @@ function MetricRow({m, onUpdate, onRemove, onMove, isFirst, isLast}:any) {
       </select>
       <div title="Show in hero stats row" onClick={()=>onUpdate("isHero",!m.isHero)}
         style={{padding:"5px 9px",borderRadius:4,fontSize:10,fontWeight:700,cursor:"pointer",letterSpacing:.5,
-          border:`1px solid ${m.isHero?"#E8821A":"#1a2a3a"}`,
-          background:m.isHero?"rgba(232,130,26,.15)":"transparent",
-          color:m.isHero?"#E8821A":"#3a5070",whiteSpace:"nowrap"}}>
+          border:`1.5px solid ${m.isHero?"#e76f51":"#c7d5e0"}`,
+          background:m.isHero?"rgba(231,111,81,.12)":"transparent",
+          color:m.isHero?"#e76f51":"#5a7a8a",whiteSpace:"nowrap"}}>
         HERO
       </div>
       <button onClick={onRemove}
-        style={{width:26,height:26,borderRadius:4,border:"1px solid #1a2a3a",background:"transparent",
-          color:"#3a5070",cursor:"pointer",fontSize:14,lineHeight:1}}>&times;</button>
+        style={{width:26,height:26,borderRadius:4,border:"1.5px solid #c7d5e0",background:"transparent",
+          color:"#5a7a8a",cursor:"pointer",fontSize:14,lineHeight:1}}>&times;</button>
     </div>
   );
 }
@@ -328,84 +325,110 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
   if (loadingKit) {
     return (
       <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <div style={{width:36,height:36,border:"3px solid rgba(255,255,255,.07)",borderTop:"3px solid #4A90D9",
+        <div style={{width:36,height:36,border:"3px solid #c7d5e0",borderTop:"3px solid #e76f51",
           borderRadius:"50%",animation:"spin 1s linear infinite"}}/>
       </div>
     );
   }
 
+  const Eyebrow = ({text}:{text:string}) => (
+    <div style={{
+      display:"inline-block",background:"#e76f51",color:"#fff",
+      padding:"3px 12px",borderRadius:20,fontSize:10,fontWeight:700,
+      letterSpacing:1.5,textTransform:"uppercase" as const,marginBottom:8,
+      fontFamily:"ui-monospace, monospace"
+    }}>{text}</div>
+  );
+
   return (
     <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
 
-      {/* Header */}
-      <div style={{background:"#060e1a",borderBottom:"1px solid rgba(255,255,255,.07)",padding:"0 28px",
-        display:"flex",alignItems:"center",justifyContent:"space-between",height:58,flexShrink:0}}>
+      {/* Topbar */}
+      <div style={{background:"#f8f9fa",borderBottom:"2px solid #08313a",padding:"0 20px",
+        display:"flex",alignItems:"center",justifyContent:"space-between",height:56,flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {form.kitLogoB64
-            ? <img src={`data:image/png;base64,${form.kitLogoB64}`} alt="" style={{height:32,width:"auto",borderRadius:5}}/>
-            : <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:19,letterSpacing:2}}>
-                <span style={{color:"#4A90D9"}}>LOCAL MEDIA HQ</span>
-                <span style={{color:"#2a3a50",margin:"0 8px"}}>|</span>
-                <span style={{color:"#E8821A"}}>MEDIA KIT BUILDER</span>
-              </div>
+            ? <img src={`data:image/png;base64,${form.kitLogoB64}`} alt="" style={{height:32,width:"auto",borderRadius:4}}/>
+            : <>
+                <div style={{width:10,height:10,borderRadius:"50%",background:"#e76f51"}}/>
+                <span className="topbar-full" style={{fontWeight:900,fontSize:16,letterSpacing:2,textTransform:"uppercase" as const}}>
+                  LOCAL MEDIA HQ <span style={{color:"#c7d5e0",margin:"0 4px"}}>/</span> <span style={{color:"#e76f51"}}>KIT BUILDER</span>
+                </span>
+                <span className="topbar-short" style={{fontWeight:900,fontSize:16,letterSpacing:2}}>
+                  LMHQ
+                </span>
+              </>
           }
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{display:"flex",gap:5}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {/* Mobile step select */}
+          <select className="step-tabs-mobile" value={step} onChange={e=>setStep(Number(e.target.value))}
+            style={{background:"#08313a",color:"#e9ae4a",border:"2px solid #08313a",borderRadius:4,
+              padding:"7px 12px",fontSize:12,fontWeight:700,letterSpacing:.5,cursor:"pointer"}}>
+            {STEPS.map((s,i) => <option key={i} value={i}>{i<step?"\u2713 ":""}{s}</option>)}
+          </select>
+          {/* Desktop step tabs */}
+          <div className="step-tabs-desktop" style={{display:"flex",gap:4}}>
             {STEPS.map((s,i)=>(
-              <div key={i} onClick={()=>setStep(i)} style={{padding:"5px 13px",borderRadius:4,fontSize:12,fontWeight:600,letterSpacing:.3,cursor:"pointer",
-                background:i===step?"#E8821A":i<step?"rgba(74,144,217,.12)":"rgba(255,255,255,.04)",
-                color:i===step?"#fff":i<step?"#4A90D9":"#3a5070",
-                border:`1px solid ${i===step?"#E8821A":i<step?"rgba(74,144,217,.2)":"rgba(255,255,255,.06)"}`}}>
+              <div key={i} onClick={()=>setStep(i)} style={{
+                padding:"5px 13px",borderRadius:4,fontSize:12,fontWeight:700,letterSpacing:.3,cursor:"pointer",
+                background:i===step?"#08313a":i<step?"#c7d5e0":"transparent",
+                color:i===step?"#e9ae4a":i<step?"#08313a":"#5a7a8a",
+                border:`1.5px solid ${i===step?"#08313a":i<step?"#c7d5e0":"#c7d5e0"}`}}>
                 {i<step?"\u2713 ":""}{s}
               </div>
             ))}
           </div>
-          <div style={{width:1,height:28,background:"rgba(255,255,255,.1)",margin:"0 4px"}}/>
+          <div style={{width:1,height:28,background:"#c7d5e0",margin:"0 4px"}}/>
           <button onClick={save} disabled={saving}
             style={{padding:"7px 16px",borderRadius:4,fontSize:12,fontWeight:700,cursor:"pointer",
-              border:"1px solid rgba(74,144,217,.3)",background:"rgba(74,144,217,.12)",color:"#4A90D9",
-              opacity:saving?0.5:1}}>
+              border:"2px solid #08313a",background:"#e9ae4a",color:"#08313a",
+              boxShadow:"1px 1px 0 #08313a",opacity:saving?0.5:1}}>
             {saving ? "Saving..." : saveStatus || "Save"}
           </button>
-          <a href="/" style={{padding:"7px 14px",borderRadius:4,fontSize:12,fontWeight:600,
-            border:"1px solid rgba(255,255,255,.1)",background:"transparent",color:"#4a6080",
+          <a href="/" style={{padding:"7px 14px",borderRadius:4,fontSize:12,fontWeight:700,
+            border:"1.5px solid #08313a",background:"transparent",color:"#08313a",
             textDecoration:"none",cursor:"pointer"}}>
-            Dashboard
+            <span className="topbar-full">Dashboard</span>
+            <span className="topbar-short">&larr;</span>
           </a>
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{flex:1,overflowY:"auto",padding:"36px 28px"}}>
+      {/* Content - extra bottom padding for fixed nav */}
+      <div style={{flex:1,overflowY:"auto",padding:"28px 20px 100px"}}>
         <div style={{maxWidth:860,margin:"0 auto"}} className="fade-in" key={step}>
 
           {/* STEP 0 - Sections */}
           {step===0 && (
             <div>
-              <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:38,marginBottom:6}}>PICK YOUR SECTIONS</h2>
-              <p style={{color:"#3a5070",fontSize:13,marginBottom:24}}>Select which sections to include in the generated media kit.</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <Eyebrow text="Step 1"/>
+              <h2 style={{fontWeight:900,fontSize:36,textTransform:"uppercase" as const,letterSpacing:1,marginBottom:6}}>
+                PICK YOUR <span style={{color:"#e76f51"}}>SECTIONS</span>
+              </h2>
+              <p style={{color:"#5a7a8a",fontSize:13,marginBottom:24}}>Select which sections to include in the generated media kit.</p>
+              <div className="grid-sections">
                 {SECTIONS.map(s=>{
                   const on=form.selectedSections.includes(s.id);
                   return (
                     <div key={s.id} onClick={()=>toggleSection(s.id)}
-                      style={{padding:"12px 14px",borderRadius:8,cursor:s.required?"default":"pointer",
-                        border:`1px solid ${on?"#4A90D9":"rgba(255,255,255,.07)"}`,
-                        background:on?"rgba(74,144,217,.07)":"rgba(255,255,255,.02)",
+                      style={{padding:"12px 14px",borderRadius:6,cursor:s.required?"default":"pointer",
+                        border:`2px solid ${on?"#08313a":"#c7d5e0"}`,
+                        background:on?"#f8f9fa":"#fff",
+                        boxShadow:on?"2px 2px 0 #08313a":"none",
                         display:"flex",gap:10,alignItems:"flex-start",transition:"all .15s"}}>
                       <div style={{width:17,height:17,borderRadius:3,flexShrink:0,marginTop:2,
-                        border:`2px solid ${on?"#4A90D9":"#1a2a3a"}`,background:on?"#4A90D9":"transparent",
+                        border:`2px solid ${on?"#08313a":"#c7d5e0"}`,background:on?"#08313a":"transparent",
                         display:"flex",alignItems:"center",justifyContent:"center"}}>
                         {on&&<span style={{fontSize:9,color:"#fff",fontWeight:800}}>{"\u2713"}</span>}
                       </div>
                       <div>
-                        <div style={{fontSize:13,fontWeight:700,color:on?"#fff":"#6a8090",display:"flex",gap:7,alignItems:"center"}}>
+                        <div style={{fontSize:13,fontWeight:700,color:on?"#08313a":"#5a7a8a",display:"flex",gap:7,alignItems:"center"}}>
                           {s.label}
-                          {s.required&&<span style={{fontSize:9,color:"#E8821A",letterSpacing:1.2,textTransform:"uppercase"}}>Required</span>}
-                          {s.recommended&&<span style={{fontSize:9,color:"#4A90D9",letterSpacing:1.2,textTransform:"uppercase"}}>Recommended</span>}
+                          {s.required&&<span style={{fontSize:9,color:"#e76f51",fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",fontFamily:"ui-monospace, monospace"}}>Required</span>}
+                          {s.recommended&&<span style={{fontSize:9,color:"#e9ae4a",fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",fontFamily:"ui-monospace, monospace"}}>Recommended</span>}
                         </div>
-                        <div style={{fontSize:11,color:"#2a4060",marginTop:2}}>{s.desc}</div>
+                        <div style={{fontSize:11,color:"#5a7a8a",marginTop:2}}>{s.desc}</div>
                       </div>
                     </div>
                   );
@@ -417,16 +440,19 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
           {/* STEP 1 - Brands */}
           {step===1 && (
             <div>
-              <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:38,marginBottom:6}}>BRAND INFO</h2>
-              <p style={{color:"#3a5070",fontSize:13,marginBottom:24}}>Enter details for each newsletter. Upload logos as PNG files.</p>
+              <Eyebrow text="Step 2"/>
+              <h2 style={{fontWeight:900,fontSize:36,textTransform:"uppercase" as const,letterSpacing:1,marginBottom:6}}>
+                BRAND <span style={{color:"#e76f51"}}>INFO</span>
+              </h2>
+              <p style={{color:"#5a7a8a",fontSize:13,marginBottom:24}}>Enter details for each newsletter. Upload logos as PNG files.</p>
 
               <div style={{...S.card,marginBottom:16}}>
-                <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:15,color:"#4A90D9",marginBottom:14,letterSpacing:1}}>KIT NAVIGATION (TOP BAR)</div>
-                <G2 cols={2}>
+                <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",marginBottom:14,letterSpacing:1.5,fontWeight:700,textTransform:"uppercase" as const}}>KIT NAVIGATION (TOP BAR)</div>
+                <div className="grid-form">
                   <Field label="Kit Title Text" value={form.kitTitle} onChange={(v:any)=>set("kitTitle",v)} placeholder="Henderson HQ x West Vegas HQ"/>
                   <LogoUpload label="Nav Logo (replaces title text)" b64={form.kitLogoB64} name={form.kitLogoName}
                     onChange={(b64:string,name:string)=>setForm((f:any)=>({...f,kitLogoB64:b64,kitLogoName:name}))}/>
-                </G2>
+                </div>
               </div>
 
               <div style={{marginBottom:16}}>
@@ -434,10 +460,11 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                 <div style={{display:"flex",gap:6,marginTop:6}}>
                   {[1,2,3,4,5,6].map(n=>(
                     <button key={n} onClick={()=>setBrandCount(n)}
-                      style={{width:44,height:40,borderRadius:5,fontWeight:700,fontSize:15,cursor:"pointer",
-                        border:`1px solid ${form.brandCount===n?"#E8821A":"#1a2a3a"}`,
-                        background:form.brandCount===n?"#E8821A":"transparent",
-                        color:form.brandCount===n?"#fff":"#4a6080"}}>
+                      style={{width:44,height:40,borderRadius:4,fontWeight:900,fontSize:15,cursor:"pointer",
+                        border:`2px solid #08313a`,
+                        background:form.brandCount===n?"#08313a":"#fff",
+                        color:form.brandCount===n?"#e9ae4a":"#08313a",
+                        boxShadow:form.brandCount===n?"2px 2px 0 #08313a":"none"}}>
                       {n}
                     </button>
                   ))}
@@ -446,10 +473,10 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
 
               {activeBrands.map((b:any,i:number)=>(
                 <div key={i} style={{...S.card,marginBottom:12}}>
-                  <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:15,color:"#E8821A",marginBottom:14,letterSpacing:1}}>
+                  <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",marginBottom:14,letterSpacing:1.5,fontWeight:700,textTransform:"uppercase" as const}}>
                     NEWSLETTER {i+1}
                   </div>
-                  <G2 cols={2}>
+                  <div className="grid-form">
                     <Field label="Newsletter Name" value={b.name} onChange={(v:any)=>updateBrand(i,"name",v)} placeholder="Henderson HQ"/>
                     <Field label="Market / City" value={b.market} onChange={(v:any)=>updateBrand(i,"market",v)} placeholder="Henderson, NV"/>
                     <Field label="Subscriber Count" value={b.subscribers} onChange={(v:any)=>updateBrand(i,"subscribers",v)} placeholder="32,000"/>
@@ -457,8 +484,8 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                     <Field label="Open Rate %" value={b.openRate} onChange={(v:any)=>updateBrand(i,"openRate",v)} placeholder="58"/>
                     <LogoUpload label="Newsletter Logo" b64={b.logoB64} name={b.logoName}
                       onChange={(b64:string,name:string)=>{updateBrand(i,"logoB64",b64);updateBrand(i,"logoName",name);}}/>
-                  </G2>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginTop:14}}>
+                  </div>
+                  <div className="grid-colors" style={{marginTop:14}}>
                     <ColorPicker label="Primary Color" value={b.primaryColor} onChange={(v:any)=>updateBrand(i,"primaryColor",v)}/>
                     <ColorPicker label="Accent Color" value={b.accentColor} onChange={(v:any)=>updateBrand(i,"accentColor",v)}/>
                     <ColorPicker label="Dark Background" value={b.darkColor} onChange={(v:any)=>updateBrand(i,"darkColor",v)}/>
@@ -466,14 +493,14 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                 </div>
               ))}
 
-              <div style={{...S.card}}>
-                <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:15,color:"#4A90D9",marginBottom:14,letterSpacing:1}}>COMBINED STATS</div>
-                <G2 cols={2}>
+              <div style={S.card}>
+                <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",marginBottom:14,letterSpacing:1.5,fontWeight:700,textTransform:"uppercase" as const}}>COMBINED STATS</div>
+                <div className="grid-form">
                   <Field label="Combined Subscribers" value={form.combinedSubs} onChange={(v:any)=>set("combinedSubs",v)} placeholder="52,000"/>
                   <Field label="Weekly Impressions" value={form.weeklyImpressions} onChange={(v:any)=>set("weeklyImpressions",v)} placeholder="97,000"/>
                   <Field label="Contact Email" value={form.contactEmail} onChange={(v:any)=>set("contactEmail",v)} placeholder="hello@hendersonhq.com"/>
                   <Field label="Kit Tagline" value={form.combinedTagline} onChange={(v:any)=>set("combinedTagline",v)} placeholder="Las Vegas Valley's most engaged local audience"/>
-                </G2>
+                </div>
               </div>
             </div>
           )}
@@ -481,22 +508,25 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
           {/* STEP 2 - Metrics */}
           {step===2 && (
             <div>
-              <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:38,marginBottom:6}}>PERFORMANCE METRICS</h2>
-              <p style={{color:"#3a5070",fontSize:13,marginBottom:24}}>Add any metrics you want to show - email stats, social following, website traffic, anything. Mark up to 3 as HERO to show large in the stats row.</p>
+              <Eyebrow text="Step 3"/>
+              <h2 style={{fontWeight:900,fontSize:36,textTransform:"uppercase" as const,letterSpacing:1,marginBottom:6}}>
+                PERFORMANCE <span style={{color:"#e76f51"}}>METRICS</span>
+              </h2>
+              <p style={{color:"#5a7a8a",fontSize:13,marginBottom:24}}>Add any metrics you want to show - email stats, social following, website traffic, anything. Mark up to 3 as HERO to show large in the stats row.</p>
 
               {form.brandCount > 1 && (
-                <div style={{...S.card,marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{...S.card,marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap" as const,gap:12}}>
                   <div>
-                    <div style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:3}}>Separate metrics per brand?</div>
-                    <div style={{fontSize:12,color:"#3a5070"}}>Shows All Brands tab plus individual tabs for each newsletter</div>
+                    <div style={{fontSize:13,fontWeight:700,color:"#08313a",marginBottom:3}}>Separate metrics per brand?</div>
+                    <div style={{fontSize:12,color:"#5a7a8a"}}>Shows All Brands tab plus individual tabs for each newsletter</div>
                   </div>
                   <div style={{display:"flex",gap:6}}>
                     {([["No","Combine all into one section",false],["Yes","Separate tabs per brand",true]] as const).map(([lbl,tip,val])=>(
                       <button key={lbl} onClick={()=>set("separateBrandMetrics",val)}
                         style={{padding:"7px 16px",borderRadius:4,fontSize:12,fontWeight:700,cursor:"pointer",
-                          border:`1px solid ${form.separateBrandMetrics===val?"#4A90D9":"#1a2a3a"}`,
-                          background:form.separateBrandMetrics===val?"rgba(74,144,217,.15)":"transparent",
-                          color:form.separateBrandMetrics===val?"#4A90D9":"#4a6080"}}>
+                          border:`2px solid #08313a`,
+                          background:form.separateBrandMetrics===val?"#08313a":"#fff",
+                          color:form.separateBrandMetrics===val?"#e9ae4a":"#08313a"}}>
                         {lbl}
                       </button>
                     ))}
@@ -505,11 +535,11 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
               )}
 
               <div style={{...S.card,marginBottom:form.separateBrandMetrics?16:0}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-                  <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:15,color:"#4A90D9",letterSpacing:1}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap" as const,gap:8}}>
+                  <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",letterSpacing:1.5,fontWeight:700,textTransform:"uppercase" as const}}>
                     {form.separateBrandMetrics?"COMBINED (ALL BRANDS TAB)":"YOUR METRICS"}
                   </div>
-                  <div style={{fontSize:10,color:"#3a5070",letterSpacing:1,textTransform:"uppercase"}}>Label - Value - Color - Hero?</div>
+                  <div style={{fontSize:10,color:"#5a7a8a",letterSpacing:1,textTransform:"uppercase",fontFamily:"ui-monospace, monospace"}}>Label - Value - Color - Hero?</div>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {form.metrics.map((m:any,i:number)=>(
@@ -521,15 +551,15 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                   ))}
                 </div>
                 <button onClick={()=>set("metrics",[...form.metrics,emptyMetric()])}
-                  style={{marginTop:10,padding:"7px 16px",borderRadius:5,border:"1px dashed #1a3a5a",
-                    background:"transparent",color:"#4A90D9",cursor:"pointer",fontSize:12,fontWeight:600}}>
+                  style={{marginTop:10,padding:"7px 16px",borderRadius:4,border:"1.5px dashed #08313a",
+                    background:"transparent",color:"#08313a",cursor:"pointer",fontSize:12,fontWeight:700}}>
                   + Add Metric
                 </button>
               </div>
 
               {form.separateBrandMetrics && activeBrands.map((b:any,bi:number)=>(
                 <div key={bi} style={{...S.card,marginBottom:12}}>
-                  <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:15,color:"#E8821A",marginBottom:14,letterSpacing:1}}>
+                  <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",marginBottom:14,letterSpacing:1.5,fontWeight:700,textTransform:"uppercase" as const}}>
                     {b.name||`BRAND ${bi+1}`} METRICS
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -559,8 +589,8 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                     if(!bm[bi]) bm[bi]=[...form.metrics];
                     bm[bi]=[...bm[bi],emptyMetric()];
                     set("brandMetrics",bm);
-                  }} style={{marginTop:10,padding:"7px 16px",borderRadius:5,border:"1px dashed #1a3a2a",
-                    background:"transparent",color:"#E8821A",cursor:"pointer",fontSize:12,fontWeight:600}}>
+                  }} style={{marginTop:10,padding:"7px 16px",borderRadius:4,border:"1.5px dashed #e76f51",
+                    background:"transparent",color:"#e76f51",cursor:"pointer",fontSize:12,fontWeight:700}}>
                     + Add Metric
                   </button>
                 </div>
@@ -571,34 +601,37 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
           {/* STEP 3 - Audience + Testimonials */}
           {step===3 && (
             <div>
-              <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:38,marginBottom:6}}>AUDIENCE + TESTIMONIALS</h2>
-              <p style={{color:"#3a5070",fontSize:13,marginBottom:24}}>Paste any survey stats you have. Add advertiser quotes or leave blank for smart placeholders.</p>
+              <Eyebrow text="Step 4"/>
+              <h2 style={{fontWeight:900,fontSize:36,textTransform:"uppercase" as const,letterSpacing:1,marginBottom:6}}>
+                AUDIENCE + <span style={{color:"#e76f51"}}>TESTIMONIALS</span>
+              </h2>
+              <p style={{color:"#5a7a8a",fontSize:13,marginBottom:24}}>Paste any survey stats you have. Add advertiser quotes or leave blank for smart placeholders.</p>
 
               <div style={{...S.card,marginBottom:16}}>
-                <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:15,color:"#4A90D9",marginBottom:8,letterSpacing:1}}>AUDIENCE DATA</div>
-                <p style={{fontSize:12,color:"#2a4060",marginBottom:10}}>Paste survey stats in any format. e.g. "71% female, 75% HHI $100K+, 63% homeowners, 22% business owners, top areas: Henderson 78%, Summerlin 20%"</p>
+                <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",marginBottom:8,letterSpacing:1.5,fontWeight:700,textTransform:"uppercase" as const}}>AUDIENCE DATA</div>
+                <p style={{fontSize:12,color:"#5a7a8a",marginBottom:10}}>Paste survey stats in any format. e.g. &quot;71% female, 75% HHI $100K+, 63% homeowners, 22% business owners, top areas: Henderson 78%, Summerlin 20%&quot;</p>
                 <textarea value={form.surveyData} onChange={(e:any)=>set("surveyData",e.target.value)}
                   placeholder="Leave blank to use smart defaults..."
                   style={{...S.input,minHeight:80,resize:"vertical"}}/>
               </div>
 
               <div style={S.card}>
-                <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:15,color:"#4A90D9",marginBottom:16,letterSpacing:1}}>TESTIMONIALS</div>
+                <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",marginBottom:16,letterSpacing:1.5,fontWeight:700,textTransform:"uppercase" as const}}>TESTIMONIALS</div>
                 {form.testimonials.map((t:any,i:number)=>(
-                  <div key={i} style={{marginBottom:14,paddingBottom:14,borderBottom:i<form.testimonials.length-1?"1px solid rgba(255,255,255,.05)":"none"}}>
-                    <div style={{fontSize:11,color:"#E8821A",fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Quote {i+1}</div>
+                  <div key={i} style={{marginBottom:14,paddingBottom:14,borderBottom:i<form.testimonials.length-1?"1.5px solid #c7d5e0":"none"}}>
+                    <div style={{fontSize:11,color:"#e76f51",fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",marginBottom:8,fontFamily:"ui-monospace, monospace"}}>Quote {i+1}</div>
                     <textarea value={t.quote} onChange={(e:any)=>updateTesti(i,"quote",e.target.value)}
                       placeholder="We ran one issue and had three new leads that same week..."
                       style={{...S.input,minHeight:60,resize:"vertical",marginBottom:8}}/>
-                    <G2 cols={2}>
+                    <div className="grid-form">
                       <Field label="Name" value={t.name} onChange={(v:any)=>updateTesti(i,"name",v)} placeholder="Sarah M."/>
                       <Field label="Company" value={t.company} onChange={(v:any)=>updateTesti(i,"company",v)} placeholder="ReMax Henderson"/>
-                    </G2>
+                    </div>
                   </div>
                 ))}
                 <button onClick={()=>set("testimonials",[...form.testimonials,{quote:"",name:"",company:""}])}
-                  style={{padding:"7px 14px",borderRadius:5,border:"1px solid #1a2a3a",background:"transparent",
-                    color:"#4a6080",cursor:"pointer",fontSize:12}}>
+                  style={{padding:"7px 14px",borderRadius:4,border:"1.5px solid #08313a",background:"#fff",
+                    color:"#08313a",cursor:"pointer",fontSize:12,fontWeight:700}}>
                   + Add Quote
                 </button>
               </div>
@@ -608,15 +641,18 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
           {/* STEP 4 - Why Us (location-specific pitch) */}
           {step===4 && (
             <div>
-              <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:38,marginBottom:6}}>WHY {form.brands[0]?.market ? form.brands[0].market.toUpperCase() : "THIS MARKET"}</h2>
-              <p style={{color:"#3a5070",fontSize:13,marginBottom:24}}>
+              <Eyebrow text="Step 5"/>
+              <h2 style={{fontWeight:900,fontSize:36,textTransform:"uppercase" as const,letterSpacing:1,marginBottom:6}}>
+                WHY <span style={{color:"#e76f51"}}>{form.brands[0]?.market ? form.brands[0].market.toUpperCase() : "THIS MARKET"}</span>
+              </h2>
+              <p style={{color:"#5a7a8a",fontSize:13,marginBottom:24}}>
                 Write 4 reasons this specific market is valuable to advertisers. This is the pitch that makes an out-of-town brand say &quot;yes.&quot; Leave blank to use generic location-agnostic copy.
               </p>
 
               <div style={S.card}>
                 {(form.whyUsItems && form.whyUsItems.length ? form.whyUsItems : [0,1,2,3].map(()=>({title:"",body:""}))).slice(0,4).map((w:any,i:number)=>(
-                  <div key={i} style={{marginBottom:18,paddingBottom:18,borderBottom:i<3?"1px solid rgba(255,255,255,.05)":"none"}}>
-                    <div style={{fontFamily:"Bebas Neue,sans-serif",fontSize:14,color:"#E8821A",letterSpacing:1,marginBottom:10}}>
+                  <div key={i} style={{marginBottom:18,paddingBottom:18,borderBottom:i<3?"1.5px solid #c7d5e0":"none"}}>
+                    <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",letterSpacing:1.5,marginBottom:10,fontWeight:700,textTransform:"uppercase" as const}}>
                       REASON 0{i+1}
                     </div>
                     <Field
@@ -648,7 +684,7 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                 ))}
               </div>
 
-              <div style={{marginTop:16,padding:"12px 14px",background:"rgba(74,144,217,.05)",border:"1px solid rgba(74,144,217,.12)",borderRadius:6,fontSize:12,color:"#4a6080",lineHeight:1.6}}>
+              <div style={{marginTop:16,padding:"12px 14px",background:"rgba(233,174,74,.08)",border:"1.5px solid #e9ae4a",borderRadius:6,fontSize:12,color:"#5a7a8a",lineHeight:1.6}}>
                 Tip: Hit all 4 with facts an advertiser cares about: growth rate, demographics, buying power, audience trust. Section title auto-fills from the first brand&apos;s market.
               </div>
             </div>
@@ -657,26 +693,30 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
           {/* STEP 5 - Pricing */}
           {step===5 && (
             <div>
-              <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:38,marginBottom:6}}>PRICING</h2>
-              <p style={{color:"#3a5070",fontSize:13,marginBottom:20}}>Show specific prices or send advertisers to a contact form instead.</p>
+              <Eyebrow text="Step 6"/>
+              <h2 style={{fontWeight:900,fontSize:36,textTransform:"uppercase" as const,letterSpacing:1,marginBottom:6}}>
+                <span style={{color:"#e76f51"}}>PRICING</span>
+              </h2>
+              <p style={{color:"#5a7a8a",fontSize:13,marginBottom:20}}>Show specific prices or send advertisers to a contact form instead.</p>
 
               <div style={{display:"flex",gap:8,marginBottom:24}}>
                 {([["full","Show Prices"],["on-request","On Request - Contact Us"]] as const).map(([mode,label])=>(
                   <button key={mode} onClick={()=>set("pricingMode",mode)}
-                    style={{padding:"9px 20px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",
-                      border:`1px solid ${form.pricingMode===mode?"#E8821A":"#1a2a3a"}`,
-                      background:form.pricingMode===mode?"#E8821A":"transparent",
-                      color:form.pricingMode===mode?"#fff":"#4a6080"}}>
+                    style={{padding:"9px 20px",borderRadius:4,fontSize:13,fontWeight:700,cursor:"pointer",
+                      border:`2px solid #08313a`,
+                      background:form.pricingMode===mode?"#08313a":"#fff",
+                      color:form.pricingMode===mode?"#e9ae4a":"#08313a",
+                      boxShadow:form.pricingMode===mode?"2px 2px 0 #08313a":"none"}}>
                     {label}
                   </button>
                 ))}
               </div>
 
               {form.pricingMode==="full" ? (
-                <div style={S.card}>
+                <div style={{...S.card,overflowX:"auto" as const}}>
                   <div style={{display:"grid",
                     gridTemplateColumns:form.brandCount>1?`2fr 1fr ${activeBrands.map(()=>"1fr").join(" ")}`:"2fr 1fr",
-                    gap:8,marginBottom:10,paddingBottom:10,borderBottom:"1px solid rgba(255,255,255,.07)"}}>
+                    gap:8,marginBottom:10,paddingBottom:10,borderBottom:"1.5px solid #c7d5e0",minWidth:form.brandCount>2?500:0}}>
                     <span style={S.label}>Ad Unit</span>
                     <span style={{...S.label,textAlign:"right" as const}}>Bundle</span>
                     {form.brandCount>1&&activeBrands.map((b:any,i:number)=>(
@@ -686,10 +726,10 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                   {form.pricing.map((p:any,pi:number)=>(
                     <div key={pi} style={{display:"grid",
                       gridTemplateColumns:form.brandCount>1?`2fr 1fr ${activeBrands.map(()=>"1fr").join(" ")}`:"2fr 1fr",
-                      gap:8,marginBottom:8,alignItems:"center"}}>
+                      gap:8,marginBottom:8,alignItems:"center",minWidth:form.brandCount>2?500:0}}>
                       <div>
-                        <div style={{fontSize:13,color:"#ccc",fontWeight:600}}>{p.unit}</div>
-                        <div style={{fontSize:11,color:"#2a4060"}}>{p.desc}</div>
+                        <div style={{fontSize:13,color:"#08313a",fontWeight:700}}>{p.unit}</div>
+                        <div style={{fontSize:11,color:"#5a7a8a"}}>{p.desc}</div>
                       </div>
                       <input value={p.bundle} onChange={(e:any)=>updatePricing(pi,"bundle",e.target.value)}
                         placeholder="$1,500" style={{...S.input,textAlign:"right",fontSize:13}}/>
@@ -701,8 +741,8 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                   ))}
                 </div>
               ) : (
-                <div style={{...S.card,color:"#4a6080",fontSize:13,lineHeight:1.8}}>
-                  The pricing section will show a clean "Contact us for rates" block. Good for new newsletters or when you prefer to discuss packages directly.
+                <div style={{...S.card,color:"#5a7a8a",fontSize:13,lineHeight:1.8}}>
+                  The pricing section will show a clean &quot;Contact us for rates&quot; block. Good for new newsletters or when you prefer to discuss packages directly.
                 </div>
               )}
             </div>
@@ -711,15 +751,16 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
           {/* STEP 6 - Preview */}
           {step===6 && (
             <div style={{textAlign:"center"}}>
-              <h2 style={{fontFamily:"Bebas Neue,sans-serif",fontSize:52,marginBottom:8}}>
-                <span style={{color:"#4A90D9"}}>PREVIEW</span> YOUR KIT
+              <Eyebrow text="Final Step"/>
+              <h2 style={{fontWeight:900,fontSize:44,textTransform:"uppercase" as const,letterSpacing:1,marginBottom:8}}>
+                <span style={{color:"#e76f51"}}>PREVIEW</span> YOUR KIT
               </h2>
-              <p style={{color:"#3a5070",fontSize:14,maxWidth:440,margin:"0 auto 32px",lineHeight:1.65}}>
+              <p style={{color:"#5a7a8a",fontSize:14,maxWidth:440,margin:"0 auto 32px",lineHeight:1.65}}>
                 Your media kit is ready to preview. Click below to see it instantly.
               </p>
 
               <div style={{...S.card,textAlign:"left",maxWidth:500,margin:"0 auto 28px"}}>
-                <div style={{fontSize:10,color:"#2a4060",textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Build Summary</div>
+                <div style={{fontSize:10,color:"#5a7a8a",textTransform:"uppercase",letterSpacing:2,marginBottom:12,fontFamily:"ui-monospace, monospace",fontWeight:700}}>Build Summary</div>
                 {[
                   ["Sections", form.selectedSections.length+" selected: "+form.selectedSections.join(", ")],
                   ["Brands", activeBrands.map((b:any)=>b.name||"Unnamed").join(", ")],
@@ -729,82 +770,92 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                   ["Pricing", form.pricingMode],
                 ].map(([k,v])=>(
                   <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",
-                    borderBottom:"1px solid rgba(255,255,255,.04)",fontSize:12}}>
-                    <span style={{color:"#3a5070",flexShrink:0,marginRight:16}}>{k}</span>
-                    <span style={{color:"#aaa",textAlign:"right"}}>{v}</span>
+                    borderBottom:"1px solid #c7d5e0",fontSize:12}}>
+                    <span style={{color:"#5a7a8a",flexShrink:0,marginRight:16,fontFamily:"ui-monospace, monospace"}}>{k}</span>
+                    <span style={{color:"#08313a",textAlign:"right",fontWeight:600}}>{v}</span>
                   </div>
                 ))}
               </div>
 
               {!generated&&(
                 <button onClick={generatePreview}
-                  style={{padding:"15px 48px",borderRadius:6,border:"none",background:"#E8821A",
-                    color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",letterSpacing:1,
-                    boxShadow:"0 4px 24px rgba(232,130,26,.3)"}}>
+                  style={{padding:"15px 48px",borderRadius:6,border:"2px solid #08313a",background:"#e76f51",
+                    color:"#fff",fontWeight:900,fontSize:16,cursor:"pointer",letterSpacing:1,
+                    boxShadow:"3px 3px 0 #08313a"}}>
                   PREVIEW MEDIA KIT
                 </button>
               )}
 
               {generated&&(
                 <div>
-                  <div style={{padding:"10px 20px",background:"rgba(60,217,120,.07)",border:"1px solid rgba(60,217,120,.18)",
-                    borderRadius:6,color:"#4ad990",fontSize:13,marginBottom:20,display:"inline-block"}}>
+                  <div style={{padding:"10px 20px",background:"rgba(22,163,74,.08)",border:"1.5px solid #16a34a",
+                    borderRadius:6,color:"#16a34a",fontSize:13,fontWeight:700,marginBottom:20,display:"inline-block"}}>
                     Ready to preview.
                   </div>
                   <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:24}}>
                     <button onClick={openPreview}
-                      style={{padding:"11px 26px",borderRadius:5,border:"1px solid #4A90D9",
-                        background:"transparent",color:"#4A90D9",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                      style={{padding:"11px 26px",borderRadius:4,border:"2px solid #08313a",
+                        background:"#fff",color:"#08313a",fontWeight:700,fontSize:13,cursor:"pointer",
+                        boxShadow:"2px 2px 0 #08313a"}}>
                       Open in New Tab
                     </button>
                     <button onClick={download}
-                      style={{padding:"11px 26px",borderRadius:5,border:"none",background:"#E8821A",
-                        color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                      style={{padding:"11px 26px",borderRadius:4,border:"2px solid #08313a",background:"#e76f51",
+                        color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"2px 2px 0 #08313a"}}>
                       Download HTML
                     </button>
                     <button onClick={downloadPDF}
-                      style={{padding:"11px 26px",borderRadius:5,border:"1px solid #E8821A",
-                        background:"transparent",color:"#E8821A",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                      style={{padding:"11px 26px",borderRadius:4,border:"2px solid #08313a",
+                        background:"#fff",color:"#e76f51",fontWeight:700,fontSize:13,cursor:"pointer",
+                        boxShadow:"2px 2px 0 #08313a"}}>
                       Download PDF
                     </button>
                     <button onClick={save}
-                      style={{padding:"11px 26px",borderRadius:5,border:"1px solid rgba(74,217,144,.3)",
-                        background:"rgba(74,217,144,.1)",color:"#4ad990",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                      style={{padding:"11px 26px",borderRadius:4,border:"2px solid #08313a",
+                        background:"#16a34a",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",
+                        boxShadow:"2px 2px 0 #08313a"}}>
                       Save Kit
                     </button>
                     <button onClick={()=>{generatePreview();}}
-                      style={{padding:"11px 26px",borderRadius:5,border:"1px solid #1a2a3a",
-                        background:"transparent",color:"#4a6080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                      style={{padding:"11px 26px",borderRadius:4,border:"1.5px solid #c7d5e0",
+                        background:"#fff",color:"#5a7a8a",fontWeight:700,fontSize:13,cursor:"pointer"}}>
                       Refresh Preview
                     </button>
                   </div>
                   {/* Inline preview */}
-                  <div style={{...S.card,padding:0,overflow:"hidden",borderRadius:12,height:500}}>
-                    <iframe srcDoc={generated} style={{width:"100%",height:"100%",border:"none",borderRadius:12}} title="Media Kit Preview"/>
+                  <div style={{...S.card,padding:0,overflow:"hidden",borderRadius:8,height:500}}>
+                    <iframe srcDoc={generated} style={{width:"100%",height:"100%",border:"none",borderRadius:8}} title="Media Kit Preview"/>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Nav */}
-          <div style={{display:"flex",justifyContent:"space-between",marginTop:36,paddingTop:20,
-            borderTop:"1px solid rgba(255,255,255,.05)"}}>
-            <button onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}
-              style={{padding:"9px 22px",borderRadius:5,border:"1px solid #1a2a3a",background:"transparent",
-                color:step===0?"#1a2a3a":"#4a6080",cursor:step===0?"default":"pointer",fontSize:13,fontWeight:600}}>
-              Back
-            </button>
-            {step<6&&(
-              <button onClick={()=>setStep(s=>Math.min(6,s+1))}
-                style={{padding:"9px 28px",borderRadius:5,border:"none",background:"#4A90D9",
-                  color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>
-                Next
-              </button>
-            )}
-          </div>
-
         </div>
+      </div>
+
+      {/* Fixed Bottom Nav */}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#f8f9fa",
+        borderTop:"2px solid #08313a",padding:"10px 20px",display:"flex",justifyContent:"space-between",
+        alignItems:"center",zIndex:50}}>
+        <button onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}
+          style={{padding:"9px 22px",borderRadius:4,border:`1.5px solid ${step===0?"#c7d5e0":"#08313a"}`,
+            background:step===0?"#eef2f5":"#fff",
+            color:step===0?"#c7d5e0":"#08313a",cursor:step===0?"default":"pointer",fontSize:13,fontWeight:700}}>
+          Back
+        </button>
+        <div style={{fontSize:11,color:"#5a7a8a",fontFamily:"ui-monospace, monospace",fontWeight:700,letterSpacing:1}}>
+          {step+1} / {STEPS.length}
+        </div>
+        {step<6?(
+          <button onClick={()=>setStep(s=>Math.min(6,s+1))}
+            style={{padding:"9px 28px",borderRadius:4,border:"2px solid #08313a",background:"#e76f51",
+              color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"2px 2px 0 #08313a"}}>
+            Next
+          </button>
+        ):(
+          <div style={{width:80}}/>
+        )}
       </div>
     </div>
   );
