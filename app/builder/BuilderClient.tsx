@@ -178,9 +178,10 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
     (async () => {
       const { data } = await supabase.from("media_kits").select("*").eq("id", kitId).single();
       if (data) {
-        // Merge saved form_data with defaults to handle any missing fields
-        const savedForm = { ...defaultForm, ...data.form_data };
-        setForm(savedForm);
+        const merged = { ...defaultForm, ...data.form_data };
+        const base = emptyBrand();
+        merged.brands = (merged.brands || []).map((b:any) => ({ ...base, ...b }));
+        setForm(merged);
         if (data.generated_html) setGenerated(data.generated_html);
       }
       setLoadingKit(false);
@@ -264,32 +265,33 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
     try {
       const name = form.brands[0]?.name || form.kitTitle || "Untitled Kit";
       if (currentKitId) {
-        // Update existing
-        await supabase.from("media_kits").update({
-          name,
-          form_data: form,
-          generated_html: generated,
-        }).eq("id", currentKitId);
+        const payload = { name, form_data: form, ...(generated ? { generated_html: generated } : {}) };
+        const { error } = await supabase.from("media_kits").update(payload).eq("id", currentKitId);
+        if (error) {
+          console.error("Supabase update failed:", error);
+          setSaveStatus("Save failed: " + error.message);
+          return;
+        }
       } else {
-        // Create new
         const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
-        const { data } = await supabase.from("media_kits").insert({
-          name,
-          slug,
-          form_data: form,
-          generated_html: generated,
-          is_published: false,
-        }).select().single();
+        const payload:any = { name, slug, form_data: form, is_published: false };
+        if (generated) payload.generated_html = generated;
+        const { data, error } = await supabase.from("media_kits").insert(payload).select().single();
+        if (error) {
+          console.error("Supabase insert failed:", error);
+          setSaveStatus("Save failed: " + error.message);
+          return;
+        }
         if (data) {
           setCurrentKitId(data.id);
-          // Update URL without full navigation
           window.history.replaceState(null, "", `/builder/${data.id}`);
         }
       }
       setSaveStatus("Saved!");
       setTimeout(() => setSaveStatus(null), 2000);
     } catch (err: any) {
-      setSaveStatus("Save failed");
+      console.error("Save threw:", err);
+      setSaveStatus("Save failed: " + (err?.message || "unknown"));
     } finally {
       setSaving(false);
     }
