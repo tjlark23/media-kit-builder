@@ -96,18 +96,32 @@ function ColorPicker({label, value, onChange}:any) {
 
 function LogoUpload({label, b64, name, mime, onChange}:any) {
   const ref = useRef<HTMLInputElement>(null);
-  const handle = (e:any) => {
+  const handle = (e: any) => {
     const file = e.target.files[0];
     if (!file) return;
-    const r = new FileReader();
-    r.onload = ev => {
-      const dataUrl = (ev.target as any).result as string;
-      const match = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
-      const fileMime = match ? match[1] : (file.type || "image/png");
-      const payload = match ? match[2] : dataUrl.split(",")[1];
-      onChange(payload, file.name, fileMime);
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      img.onload = () => {
+        const MAX = 300;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, w, h);
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const quality = mime === 'image/jpeg' ? 0.7 : undefined;
+        const dataUrl = canvas.toDataURL(mime, quality);
+        const b64 = dataUrl.split(',')[1];
+        onChange(b64, file.name, mime);
+      };
+      img.src = (ev.target as any).result;
     };
-    r.readAsDataURL(file);
+    reader.readAsDataURL(file);
   };
   return (
     <div>
@@ -263,6 +277,10 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
     setSaving(true);
     setSaveStatus(null);
     try {
+      const approxSize = JSON.stringify(form).length + (generated?.length || 0);
+      if (approxSize > 900_000) {
+        console.warn(`[mkb] payload approx ${(approxSize / 1024).toFixed(1)}KB — approaching 1MB limit`);
+      }
       const name = form.brands[0]?.name || form.kitTitle || "Untitled Kit";
       if (currentKitId) {
         const payload = { name, form_data: form, ...(generated ? { generated_html: generated } : {}) };
