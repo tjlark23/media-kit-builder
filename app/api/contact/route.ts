@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
+// Short-term: every submission routes here regardless of which kit generated it.
+// Per-kit routing is documented in /FORM-ROUTING-NOTES.md.
+const RECIPIENT = "tj@tjlarkin.com";
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { sponsorName, company, email, message, kitName, contactEmail } = body;
 
-  if (!sponsorName || !company || !email || !contactEmail) {
+  if (!sponsorName || !company || !email) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -19,11 +23,12 @@ export async function POST(req: NextRequest) {
   try {
     await resend.emails.send({
       from: "Media Kit <onboarding@resend.dev>",
-      to: contactEmail,
+      to: RECIPIENT,
       replyTo: email,
-      subject: `Media Kit Inquiry: ${company} re: ${kitName}`,
+      subject: `Media Kit Inquiry: ${company} re: ${kitName || "Untitled Kit"}`,
       text: [
-        `New inquiry from your media kit for ${kitName}`,
+        `New inquiry from media kit: ${kitName || "Untitled"}`,
+        contactEmail ? `Kit's listed contact email (not used for routing yet): ${contactEmail}` : "",
         "",
         `Name: ${sponsorName}`,
         `Company: ${company}`,
@@ -33,7 +38,7 @@ export async function POST(req: NextRequest) {
         "",
         "---",
         "Sent via Media Kit Builder - Local Media HQ",
-      ].join("\n"),
+      ].filter(Boolean).join("\n"),
     });
 
     return NextResponse.json({ success: true });

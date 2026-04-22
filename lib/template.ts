@@ -127,7 +127,6 @@ export function buildMediaKitHTML(form: FormData): string {
           <p class="hero-intro">${esc(heroIntro)}</p>
           <p class="hero-pull">${esc(heroPull)}</p>
           <div class="hero-btns">
-            <a href="#pricing" class="btn btn-yellow">See the rates</a>
             <a href="#" class="btn btn-black" onclick="openModal();return false">Get in Touch &rarr;</a>
           </div>
         </div>
@@ -159,12 +158,14 @@ export function buildMediaKitHTML(form: FormData): string {
 
   // ---------- Stats Bar ----------
   const statsLabel = brandCount > 1 ? "TOTALS ACROSS ALL NEWSLETTERS" : "THE NUMBERS AT A GLANCE";
-  const statsCells = buildStatsCells(heroMetrics);
-  const statsHTML = `
+  const filledHeroMetrics = heroMetrics.filter((m) => (m.value || "").trim() && (m.label || "").trim());
+  const statsCells = buildStatsCells(filledHeroMetrics);
+  const statsCount = Math.min(4, filledHeroMetrics.length);
+  const statsHTML = filledHeroMetrics.length === 0 ? "" : `
   <section class="stats-section">
     <div class="container">
       <div class="stats-label">${statsLabel}</div>
-      <div class="stats-grid">
+      <div class="stats-grid stats-n-${statsCount}">
         ${statsCells}
       </div>
     </div>
@@ -245,7 +246,7 @@ export function buildMediaKitHTML(form: FormData): string {
     <div class="container">
       <div class="section-head reveal">
         <h2 class="section-title">Why <span class="accent">Newsletters</span></h2>
-        <p class="section-sub">Newsletter advertising outperforms display, social, and search on nearly every engagement metric.</p>
+        <p class="section-sub">Newsletter advertising drives stronger engagement than display, social, and search.</p>
       </div>
       <div class="why-grid">
         ${WHY_NEWS_ITEMS.map((w, i) => buildWhyItem(w.num, w.title, w.body, i)).join("")}
@@ -538,7 +539,6 @@ function buildStatsCells(heroMetrics: MetricData[]): string {
 }
 
 function buildBrandCard(b: BrandData, i: number): string {
-  const initials = buildInitials(b.name || "");
   const tagMarket = (b.market || "").split(/[,&]/)[0].trim().toUpperCase();
   const tagFreq = (b.frequency || "").toUpperCase();
   const tags: string[] = [];
@@ -552,14 +552,9 @@ function buildBrandCard(b: BrandData, i: number): string {
   if (b.openRate) statParts.push(`<div><div class="brand-stat-v orange">${escapeForHTML(b.openRate)}${/%/.test(b.openRate) ? "" : "%"}</div><div class="brand-stat-l">Open Rate</div></div>`);
   if (b.frequency) statParts.push(`<div><div class="brand-stat-v">${escapeForHTML(b.frequency)}</div><div class="brand-stat-l">Frequency</div></div>`);
 
-  const logoCell = b.logoB64
-    ? `<div class="brand-logo" style="padding:4px"><img src="data:${b.logoMime || "image/png"};base64,${b.logoB64}" alt="${escapeForHTML(b.name || "")}" style="max-width:100%;max-height:100%;object-fit:contain"></div>`
-    : `<div class="brand-logo">${escapeForHTML(initials)}</div>`;
-
   return `
       <div class="brand-card reveal ${delay}">
         <div class="corner c-tl"></div><div class="corner c-tr"></div><div class="corner c-bl"></div><div class="corner c-br"></div>
-        ${logoCell}
         <div class="brand-tags">${tagsHTML}</div>
         <h3 class="brand-name">${escapeForHTML(b.name || "Newsletter")}</h3>
         <p class="brand-market">${escapeForHTML(b.market || "")}</p>
@@ -567,13 +562,6 @@ function buildBrandCard(b: BrandData, i: number): string {
           ${statParts.join("")}
         </div>
       </div>`;
-}
-
-function buildInitials(name: string): string {
-  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "N";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function buildMetricPanel(metrics: MetricData[]): string {
@@ -666,8 +654,8 @@ const WHY_NEWS_ITEMS = [
   },
   {
     num: "03",
-    title: "3 to 5x Higher CTR",
-    body: "Newsletter ads average 7 to 11% click-through. Display ads average 0.1%. Facebook ads average 0.9%. Email is the best-performing ad channel by a wide margin.",
+    title: "Email Outperforms Display and Social",
+    body: "Newsletter advertising consistently drives stronger engagement than display banners or social feed ads. Readers chose to be here, so they actually read what lands in their inbox instead of scrolling past it.",
   },
   {
     num: "04",
@@ -989,8 +977,13 @@ nav {
   display:grid; grid-template-columns: 1fr 1fr;
   border-left: var(--border); border-right: var(--border);
 }
+.stats-grid.stats-n-1 { grid-template-columns: 1fr; }
 @media(min-width:768px) {
-  .stats-grid { grid-template-columns: repeat(4, 1fr); border-left:none; border-right:none; }
+  .stats-grid { border-left:none; border-right:none; }
+  .stats-grid.stats-n-1 { grid-template-columns: 1fr; }
+  .stats-grid.stats-n-2 { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid.stats-n-3 { grid-template-columns: repeat(3, 1fr); }
+  .stats-grid.stats-n-4 { grid-template-columns: repeat(4, 1fr); }
 }
 .stat-cell {
   display:flex; flex-direction:column; align-items:center;
@@ -999,8 +992,13 @@ nav {
 }
 .stat-cell:last-child { border-right: none; }
 @media(max-width:767px) {
-  .stat-cell:nth-child(2) { border-right: none; }
-  .stat-cell:nth-child(3), .stat-cell:nth-child(4) { border-top: var(--border); }
+  .stats-grid.stats-n-2 .stat-cell:nth-child(2),
+  .stats-grid.stats-n-3 .stat-cell:nth-child(2),
+  .stats-grid.stats-n-4 .stat-cell:nth-child(2) { border-right: none; }
+  .stats-grid.stats-n-3 .stat-cell:nth-child(3),
+  .stats-grid.stats-n-4 .stat-cell:nth-child(3),
+  .stats-grid.stats-n-4 .stat-cell:nth-child(4) { border-top: var(--border); }
+  .stats-grid.stats-n-3 .stat-cell:nth-child(3) { grid-column: 1 / -1; border-right: none; }
 }
 .stat-cell:hover { background: var(--yellow); }
 .stat-num { font-size: clamp(36px, 4vw, 48px); font-weight: 900; color: var(--black); letter-spacing: -0.04em; margin-bottom: 8px; transition: transform 0.3s; }

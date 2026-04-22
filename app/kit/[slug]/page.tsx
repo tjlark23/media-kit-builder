@@ -19,24 +19,36 @@ export default async function PublicKit({ params }: { params: Promise<{ slug: st
   const contactEmail = kit.form_data?.contactEmail || "";
   const kitName = kit.name || "";
 
-  // Inject a script into the generated HTML that makes "Get in Touch" buttons
-  // message the parent frame to scroll to the contact form
+  // Inject a script into the generated HTML that hijacks every "Get in Touch" path
+  // to open the parent React modal instead of any in-iframe modal/section.
   const injectedScript = `
 <script>
-document.addEventListener('click', function(e) {
-  var btn = e.target.closest('button, a');
-  if (!btn) return;
-  var text = (btn.textContent || '').trim().toUpperCase().replace(/[^A-Z ]/g, '').trim();
-  var triggers = ['GET IN TOUCH', 'CONTACT US FOR RATES', "LETS TALK", 'TALK TO US', 'PARTNER WITH US', 'EMAIL US', 'START THE CONVERSATION', 'BOOK A CALL'];
-  if (triggers.indexOf(text) !== -1) {
-    e.preventDefault();
-    e.stopPropagation();
-    window.parent.postMessage({ type: 'scrollToContact' }, '*');
-    return false;
+(function(){
+  function openParentModal(){
+    try { window.parent.postMessage({ type: 'openContactModal' }, '*'); } catch(e) {}
   }
-});
-// Remove the contact modal from opening inside the iframe (supports both id conventions)
-['contact-modal', 'modal'].forEach(function(id){ var m = document.getElementById(id); if (m) m.remove(); });
+  // Override any in-page modal openers so even inline onclick handlers route to the parent.
+  window.openModal = openParentModal;
+  window.closeModal = function(){};
+  // Remove the in-iframe modal element entirely (supports both id conventions).
+  ['contact-modal', 'modal'].forEach(function(id){
+    var m = document.getElementById(id);
+    if (m && m.parentNode) m.parentNode.removeChild(m);
+  });
+  // Catch buttons/links by label too, in case any path bypasses openModal.
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button, a');
+    if (!btn) return;
+    var text = (btn.textContent || '').trim().toUpperCase().replace(/[^A-Z ]/g, '').trim();
+    var triggers = ['GET IN TOUCH', 'CONTACT US FOR RATES', 'LETS TALK', 'TALK TO US', 'PARTNER WITH US', 'START THE CONVERSATION', 'BOOK A CALL'];
+    if (triggers.indexOf(text) !== -1) {
+      e.preventDefault();
+      e.stopPropagation();
+      openParentModal();
+      return false;
+    }
+  }, true);
+})();
 </script>`;
 
   const htmlWithInjection = kit.generated_html.replace(

@@ -32,14 +32,14 @@ const defaultForm = {
   selectedSections:["hero","meet","metrics","reader","why_news","why_us","pricing","testimonials","cta"],
   brandCount:1,
   brands:[emptyBrand()],
-  kitTitle:"Henderson HQ x West Vegas HQ",
+  kitTitle:"",
   kitLogoB64:"", kitLogoName:"", kitLogoMime:"",
   combinedSubs:"", combinedTagline:"", weeklyImpressions:"", contactEmail:"",
   metrics:[
-    {id:"m1", label:"Subscribers",       value:"",  color:"blue",   isHero:true},
-    {id:"m2", label:"Avg Open Rate",     value:"",  color:"orange", isHero:true},
-    {id:"m3", label:"Weekly Impressions",value:"",  color:"blue",   isHero:true},
-    {id:"m4", label:"Click Rate",        value:"",  color:"orange", isHero:false},
+    {id:"m1", label:"", value:"", color:"blue",   isHero:true},
+    {id:"m2", label:"", value:"", color:"orange", isHero:true},
+    {id:"m3", label:"", value:"", color:"blue",   isHero:true},
+    {id:"m4", label:"", value:"", color:"orange", isHero:true},
   ],
   separateBrandMetrics: false,
   brandMetrics:{} as any,
@@ -75,7 +75,8 @@ const Label = ({c}:{c:string}) => <span style={S.label}>{c}</span>;
 const Field = ({label,value,onChange,placeholder,type="text",style={}}:any) => (
   <div>
     <Label c={label}/>
-    <input type={type} value={value} onChange={(e:any)=>onChange(e.target.value)} placeholder={placeholder} style={{...S.input,...style}}/>
+    <input type={type} value={value} onChange={(e:any)=>onChange(e.target.value)} placeholder={placeholder} style={{...S.input,...style}}
+      autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-1p-ignore data-lpignore="true" data-form-type="other"/>
   </div>
 );
 
@@ -154,9 +155,11 @@ function MetricRow({m, onUpdate, onRemove, onMove, isFirst, isLast}:any) {
           style={{width:20,height:18,border:"none",background:"transparent",color:isLast?"#c7d5e0":"#08313a",cursor:isLast?"default":"pointer",fontSize:10,lineHeight:1}}>&#9660;</button>
       </div>
       <input value={m.label} onChange={(e:any)=>onUpdate("label",e.target.value)}
-        placeholder="e.g. Facebook Followers" style={{...S.input,fontSize:12}}/>
+        placeholder="e.g. Facebook Followers" style={{...S.input,fontSize:12}}
+        autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-1p-ignore data-lpignore="true" data-form-type="other"/>
       <input value={m.value} onChange={(e:any)=>onUpdate("value",e.target.value)}
-        placeholder="e.g. 47,000" style={{...S.input,fontSize:12}}/>
+        placeholder="e.g. 47,000" style={{...S.input,fontSize:12}}
+        autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-1p-ignore data-lpignore="true" data-form-type="other"/>
       <select value={m.color} onChange={(e:any)=>onUpdate("color",e.target.value)}
         style={{...S.input,width:90,fontSize:12,cursor:"pointer"}}>
         <option value="blue">Blue</option>
@@ -642,7 +645,8 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                 <p style={{fontSize:12,color:"#5a7a8a",marginBottom:10}}>Paste survey stats in any format. e.g. &quot;71% female, 75% HHI $100K+, 63% homeowners, 22% business owners, top areas: Henderson 78%, Summerlin 20%&quot;</p>
                 <textarea value={form.surveyData} onChange={(e:any)=>set("surveyData",e.target.value)}
                   placeholder="Leave blank to use smart defaults..."
-                  style={{...S.input,minHeight:80,resize:"vertical"}}/>
+                  style={{...S.input,minHeight:80,resize:"vertical"}}
+                  autoComplete="off" autoCorrect="off" spellCheck={false} data-1p-ignore data-lpignore="true" data-form-type="other"/>
               </div>
 
               <div style={S.card}>
@@ -652,7 +656,8 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                     <div style={{fontSize:11,color:"#e76f51",fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",marginBottom:8,fontFamily:"ui-monospace, monospace"}}>Quote {i+1}</div>
                     <textarea value={t.quote} onChange={(e:any)=>updateTesti(i,"quote",e.target.value)}
                       placeholder="We ran one issue and had three new leads that same week..."
-                      style={{...S.input,minHeight:60,resize:"vertical",marginBottom:8}}/>
+                      style={{...S.input,minHeight:60,resize:"vertical",marginBottom:8}}
+                      autoComplete="off" autoCorrect="off" spellCheck={false} data-1p-ignore data-lpignore="true" data-form-type="other"/>
                     <div className="grid-form">
                       <Field label="Name" value={t.name} onChange={(v:any)=>updateTesti(i,"name",v)} placeholder="Sarah M."/>
                       <Field label="Company" value={t.company} onChange={(v:any)=>updateTesti(i,"company",v)} placeholder="ReMax Henderson"/>
@@ -712,6 +717,7 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                           "We are not a national ad network. Every subscriber lives in your service area. You are reaching the exact people who can walk through your door."
                         ][i]}
                         style={{...S.input,minHeight:80,resize:"vertical"}}
+                        autoComplete="off" autoCorrect="off" spellCheck={false} data-1p-ignore data-lpignore="true" data-form-type="other"
                       />
                     </div>
                   </div>
@@ -766,10 +772,12 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                         <div style={{fontSize:11,color:"#5a7a8a"}}>{p.desc}</div>
                       </div>
                       <input value={p.bundle} onChange={(e:any)=>updatePricing(pi,"bundle",e.target.value)}
-                        placeholder="$1,500" style={{...S.input,textAlign:"right",fontSize:13}}/>
+                        placeholder="$1,500" style={{...S.input,textAlign:"right",fontSize:13}}
+                        autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-1p-ignore data-lpignore="true" data-form-type="other"/>
                       {form.brandCount>1&&activeBrands.map((_:any,bi:number)=>(
                         <input key={bi} value={p.b[bi]||""} onChange={(e:any)=>updatePricingBrand(pi,bi,e.target.value)}
-                          placeholder="$1,000" style={{...S.input,textAlign:"right",fontSize:13}}/>
+                          placeholder="$1,000" style={{...S.input,textAlign:"right",fontSize:13}}
+                          autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-1p-ignore data-lpignore="true" data-form-type="other"/>
                       ))}
                     </div>
                   ))}
