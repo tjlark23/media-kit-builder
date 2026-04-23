@@ -320,14 +320,19 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
     setSaveStatus(null);
     setSlugError(null);
     try {
-      const approxSize = JSON.stringify(form).length + (generated?.length || 0);
+      // Always regenerate the HTML from the latest form state so Save persists
+      // exactly what the user sees, without requiring a separate Refresh Preview.
+      const freshHtml = buildMediaKitHTML(form);
+      setGenerated(freshHtml);
+
+      const approxSize = JSON.stringify(form).length + freshHtml.length;
       if (approxSize > 900_000) {
         console.warn(`[mkb] payload approx ${(approxSize / 1024).toFixed(1)}KB — approaching 1MB limit`);
       }
       const name = form.brands[0]?.name || form.kitTitle || "Untitled Kit";
       if (currentKitId) {
         // Slug is locked once saved; never updated on subsequent saves.
-        const payload = { name, form_data: form, ...(generated ? { generated_html: generated } : {}) };
+        const payload = { name, form_data: form, generated_html: freshHtml };
         const { error } = await supabase.from("media_kits").update(payload).eq("id", currentKitId);
         if (error) {
           console.error("Supabase update failed:", error);
@@ -358,8 +363,7 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
           slugInputRef.current?.focus();
           return;
         }
-        const payload:any = { name, slug: desired, form_data: form, is_published: false };
-        if (generated) payload.generated_html = generated;
+        const payload:any = { name, slug: desired, form_data: form, is_published: false, generated_html: freshHtml };
         const { data, error } = await supabase.from("media_kits").insert(payload).select().single();
         if (error) {
           console.error("Supabase insert failed:", error);
