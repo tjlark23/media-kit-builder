@@ -17,6 +17,20 @@ const SECTIONS = [
 
 const STEPS = ["Sections","Brands","Metrics","Audience","Why Us","Pricing","Preview"];
 
+const PUBLIC_BASE = "https://mediakit.localmediahq.com";
+
+const slugify = (s: string): string =>
+  (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+const validateSlug = (s: string): string | null => {
+  if (!s || !s.trim()) return "Slug can't be empty.";
+  if (!/^[a-z0-9-]+$/.test(s)) return "Use only lowercase letters, numbers, and dashes.";
+  if (s.startsWith("-") || s.endsWith("-")) return "Can't start or end with a dash.";
+  if (s.length < 2) return "Slug must be at least 2 characters.";
+  if (s.length > 80) return "Slug must be 80 characters or fewer.";
+  return null;
+};
+
 const emptyBrand = () => ({
   name:"", market:"", subscribers:"", frequency:"", openRate:"",
   primaryColor:"#4A90D9", accentColor:"#E8821A", darkColor:"#0f1e30",
@@ -189,6 +203,17 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
   const [currentKitId,setCurrentKitId] = useState<string|null>(kitId || null);
   const [loadingKit,setLoadingKit] = useState(!!kitId);
 
+  // Slug + publish + share state
+  const [currentSlug,setCurrentSlug] = useState<string|null>(null);
+  const [isPublished,setIsPublished] = useState<boolean>(false);
+  const [slugInput,setSlugInput] = useState<string>("");
+  const [slugTouched,setSlugTouched] = useState<boolean>(false);
+  const [slugError,setSlugError] = useState<string|null>(null);
+  const [publishing,setPublishing] = useState<boolean>(false);
+  const [publishStatus,setPublishStatus] = useState<string|null>(null);
+  const [copyStatus,setCopyStatus] = useState<string|null>(null);
+  const slugInputRef = useRef<HTMLInputElement>(null);
+
   // Load existing kit
   useEffect(() => {
     if (!kitId) return;
@@ -200,10 +225,24 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
         merged.brands = (merged.brands || []).map((b:any) => ({ ...base, ...b }));
         setForm(merged);
         if (data.generated_html) setGenerated(data.generated_html);
+        if (data.slug) {
+          setCurrentSlug(data.slug);
+          setSlugInput(data.slug);
+          setSlugTouched(true); // saved kit — slug is locked, treat as user-set
+        }
+        setIsPublished(!!data.is_published);
       }
       setLoadingKit(false);
     })();
   }, [kitId]);
+
+  // Auto-derive slug from first brand name (or kit title) until user manually edits it.
+  // Only runs for unsaved kits.
+  useEffect(() => {
+    if (currentKitId || slugTouched) return;
+    const source = form.brands[0]?.name || form.kitTitle || "";
+    setSlugInput(slugify(source));
+  }, [form.brands, form.kitTitle, currentKitId, slugTouched]);
 
   const set = (k:string,v:any) => setForm((f:any)=>({...f,[k]:v}));
 
@@ -279,6 +318,7 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
   const save = async () => {
     setSaving(true);
     setSaveStatus(null);
+    setSlugError(null);
     try {
       const approxSize = JSON.stringify(form).length + (generated?.length || 0);
       if (approxSize > 900_000) {
@@ -286,6 +326,7 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
       }
       const name = form.brands[0]?.name || form.kitTitle || "Untitled Kit";
       if (currentKitId) {
+        // Slug is locked once saved; never updated on subsequent saves.
         const payload = { name, form_data: form, ...(generated ? { generated_html: generated } : {}) };
         const { error } = await supabase.from("media_kits").update(payload).eq("id", currentKitId);
         if (error) {
@@ -294,17 +335,48 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
           return;
         }
       } else {
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
-        const payload:any = { name, slug, form_data: form, is_published: false };
+        // First save — validate + collision-check the chosen slug.
+        const desired = (slugInput || slugify(name) || "untitled").trim();
+        const ve = validateSlug(desired);
+        if (ve) {
+          setSlugError(ve);
+          setSaveStatus("Fix the slug to save.");
+          slugInputRef.current?.focus();
+          return;
+        }
+        const { data: clash, error: clashErr } = await supabase
+          .from("media_kits").select("id").eq("slug", desired).maybeSingle();
+        if (clashErr) {
+          console.error("Slug check failed:", clashErr);
+          setSaveStatus("Save failed: " + clashErr.message);
+          return;
+        }
+        if (clash) {
+          const msg = `The URL "${desired}" is already taken. Pick a different slug.`;
+          setSlugError(msg);
+          setSaveStatus("Fix the slug to save.");
+          slugInputRef.current?.focus();
+          return;
+        }
+        const payload:any = { name, slug: desired, form_data: form, is_published: false };
         if (generated) payload.generated_html = generated;
         const { data, error } = await supabase.from("media_kits").insert(payload).select().single();
         if (error) {
           console.error("Supabase insert failed:", error);
+          // Defensive: if a race created the same slug between our check and insert.
+          if (/duplicate key|unique constraint/i.test(error.message)) {
+            setSlugError(`The URL "${desired}" was just taken. Pick another.`);
+            setSaveStatus("Fix the slug to save.");
+            slugInputRef.current?.focus();
+            return;
+          }
           setSaveStatus("Save failed: " + error.message);
           return;
         }
         if (data) {
           setCurrentKitId(data.id);
+          setCurrentSlug(data.slug);
+          setIsPublished(!!data.is_published);
           window.history.replaceState(null, "", `/builder/${data.id}`);
         }
       }
@@ -315,6 +387,44 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
       setSaveStatus("Save failed: " + (err?.message || "unknown"));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const togglePublish = async () => {
+    if (!currentKitId) return;
+    setPublishing(true);
+    setPublishStatus(null);
+    const next = !isPublished;
+    const { error } = await supabase.from("media_kits").update({ is_published: next }).eq("id", currentKitId);
+    if (error) {
+      console.error("Publish toggle failed:", error);
+      setPublishStatus("Failed: " + error.message);
+    } else {
+      setIsPublished(next);
+      setPublishStatus(next ? "Published!" : "Unpublished.");
+      setTimeout(() => setPublishStatus(null), 2000);
+    }
+    setPublishing(false);
+  };
+
+  const publicUrl = currentSlug ? `${PUBLIC_BASE}/kit/${currentSlug}` : "";
+
+  const copyShareUrl = async () => {
+    if (!publicUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopyStatus("Copied!");
+      setTimeout(() => setCopyStatus(null), 2000);
+    } catch (e) {
+      // Fallback for older browsers / non-secure contexts
+      const ta = document.createElement("textarea");
+      ta.value = publicUrl;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); setCopyStatus("Copied!"); }
+      catch { setCopyStatus("Copy failed"); }
+      document.body.removeChild(ta);
+      setTimeout(() => setCopyStatus(null), 2000);
     }
   };
 
@@ -329,6 +439,12 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
   };
 
   const openPreview = () => {
+    // Prefer the real public URL when the kit is saved AND published.
+    if (currentKitId && isPublished && currentSlug) {
+      window.open(`${PUBLIC_BASE}/kit/${currentSlug}`, "_blank");
+      return;
+    }
+    // Otherwise, fall back to the local blob preview if we have generated HTML.
     if (!generated) return;
     const blob=new Blob([generated],{type:"text/html"});
     window.open(URL.createObjectURL(blob),"_blank");
@@ -801,6 +917,93 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                 Your media kit is ready to preview. Click below to see it instantly.
               </p>
 
+              {/* SHARE / PUBLISH CARD */}
+              <div style={{...S.card,textAlign:"left",maxWidth:500,margin:"0 auto 16px"}}>
+                <div style={{fontFamily:"ui-monospace, monospace",fontSize:12,color:"#e76f51",marginBottom:12,letterSpacing:1.5,fontWeight:700,textTransform:"uppercase" as const}}>
+                  {currentKitId ? "PUBLIC URL" : "CHOOSE YOUR URL"}
+                </div>
+
+                {!currentKitId ? (
+                  <>
+                    <Label c="Slug"/>
+                    <input
+                      ref={slugInputRef}
+                      value={slugInput}
+                      onChange={(e:any)=>{
+                        setSlugTouched(true);
+                        setSlugInput(e.target.value);
+                        if (slugError) setSlugError(null);
+                      }}
+                      placeholder="your-newsletter-name"
+                      style={{...S.input, fontFamily:"ui-monospace, monospace", fontSize:13,
+                        borderColor: slugError ? "#dc2626" : "#08313a"}}
+                      autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+                      data-1p-ignore data-lpignore="true" data-form-type="other"
+                    />
+                    {slugError && (
+                      <div style={{marginTop:6,fontSize:12,color:"#dc2626",fontWeight:600}}>{slugError}</div>
+                    )}
+                    <div style={{marginTop:10,fontSize:12,color:"#5a7a8a",fontFamily:"ui-monospace, monospace",lineHeight:1.5,wordBreak:"break-all" as const}}>
+                      Your kit will be at:<br/>
+                      <span style={{color:"#08313a",fontWeight:700}}>{PUBLIC_BASE}/kit/{slugInput || "[slug]"}</span>
+                    </div>
+                    <div style={{marginTop:12,padding:"10px 12px",background:"rgba(233,174,74,.12)",border:"1.5px solid #e9ae4a",borderRadius:5,fontSize:12,color:"#5a7a8a",lineHeight:1.5}}>
+                      Save the kit first to get a shareable link. URL can&apos;t change after first save.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{display:"flex",alignItems:"stretch",gap:8,flexWrap:"wrap" as const}}>
+                      <input
+                        readOnly
+                        value={publicUrl}
+                        onClick={(e:any)=>e.target.select()}
+                        style={{...S.input, flex:1, minWidth:200, fontFamily:"ui-monospace, monospace", fontSize:12,
+                          background:"#eef2f5", color:"#08313a", cursor:"text"}}
+                      />
+                      <button onClick={copyShareUrl} disabled={!publicUrl}
+                        style={{padding:"7px 16px",borderRadius:4,border:"2px solid #08313a",
+                          background:copyStatus==="Copied!"?"#16a34a":"#e9ae4a",
+                          color:copyStatus==="Copied!"?"#fff":"#08313a",
+                          fontWeight:700,fontSize:12,cursor:"pointer",boxShadow:"1px 1px 0 #08313a",whiteSpace:"nowrap" as const}}>
+                        {copyStatus || "Copy Link"}
+                      </button>
+                    </div>
+                    <div style={{marginTop:8,fontSize:11,color:"#5a7a8a",fontFamily:"ui-monospace, monospace"}}>
+                      URL is locked once a kit is saved.
+                    </div>
+
+                    {!isPublished && (
+                      <div style={{marginTop:12,padding:"10px 12px",background:"rgba(220,38,38,.06)",border:"1.5px solid #dc2626",borderRadius:5,fontSize:12,color:"#dc2626",lineHeight:1.5,fontWeight:600}}>
+                        &#9888; This kit is not published yet. The link will 404 until you publish.
+                      </div>
+                    )}
+
+                    <div style={{marginTop:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap" as const}}>
+                      <button onClick={togglePublish} disabled={publishing}
+                        style={{padding:"9px 22px",borderRadius:4,border:"2px solid #08313a",
+                          background: isPublished ? "#fff" : "#16a34a",
+                          color: isPublished ? "#08313a" : "#fff",
+                          fontWeight:700,fontSize:13,cursor:publishing?"default":"pointer",
+                          boxShadow:"2px 2px 0 #08313a",opacity:publishing?0.6:1}}>
+                        {publishing ? "..." : (isPublished ? "Unpublish" : "Publish Kit")}
+                      </button>
+                      <span style={{
+                        fontSize:11,fontWeight:700,letterSpacing:1,padding:"3px 10px",borderRadius:3,
+                        fontFamily:"ui-monospace, monospace",
+                        background: isPublished ? "rgba(22,163,74,.1)" : "rgba(199,213,224,.4)",
+                        color: isPublished ? "#16a34a" : "#5a7a8a",
+                        border: `1px solid ${isPublished ? "rgba(22,163,74,.3)" : "#c7d5e0"}`}}>
+                        {isPublished ? "PUBLISHED" : "DRAFT"}
+                      </span>
+                      {publishStatus && (
+                        <span style={{fontSize:12,color:"#16a34a",fontWeight:700}}>{publishStatus}</span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
               <div style={{...S.card,textAlign:"left",maxWidth:500,margin:"0 auto 28px"}}>
                 <div style={{fontSize:10,color:"#5a7a8a",textTransform:"uppercase",letterSpacing:2,marginBottom:12,fontFamily:"ui-monospace, monospace",fontWeight:700}}>Build Summary</div>
                 {[
@@ -834,12 +1037,19 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                     borderRadius:6,color:"#16a34a",fontSize:13,fontWeight:700,marginBottom:20,display:"inline-block"}}>
                     Ready to preview.
                   </div>
-                  <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:24}}>
-                    <button onClick={openPreview}
+                  <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:8}}>
+                    <button
+                      onClick={openPreview}
+                      disabled={!currentKitId}
+                      title={!currentKitId ? "Save the kit first" : ""}
                       style={{padding:"11px 26px",borderRadius:4,border:"2px solid #08313a",
-                        background:"#fff",color:"#08313a",fontWeight:700,fontSize:13,cursor:"pointer",
-                        boxShadow:"2px 2px 0 #08313a"}}>
-                      Open in New Tab
+                        background: !currentKitId ? "#eef2f5" : (isPublished ? "#16a34a" : "#fff"),
+                        color: !currentKitId ? "#c7d5e0" : (isPublished ? "#fff" : "#08313a"),
+                        fontWeight:700,fontSize:13,
+                        cursor: !currentKitId ? "not-allowed" : "pointer",
+                        boxShadow: !currentKitId ? "none" : "2px 2px 0 #08313a",
+                        opacity: !currentKitId ? 0.6 : 1}}>
+                      {!currentKitId ? "Open Live URL" : (isPublished ? "Open Live URL" : "Preview (Unpublished)")}
                     </button>
                     <button onClick={download}
                       style={{padding:"11px 26px",borderRadius:4,border:"2px solid #08313a",background:"#e76f51",
@@ -864,6 +1074,16 @@ export default function BuilderClient({ kitId }: { kitId?: string }) {
                       Refresh Preview
                     </button>
                   </div>
+                  {currentKitId && !isPublished && (
+                    <div style={{fontSize:11,color:"#5a7a8a",fontStyle:"italic",marginBottom:20}}>
+                      Preview only &mdash; publish to get a shareable link.
+                    </div>
+                  )}
+                  {!currentKitId && (
+                    <div style={{fontSize:11,color:"#5a7a8a",fontStyle:"italic",marginBottom:20}}>
+                      Save the kit first to preview the live URL.
+                    </div>
+                  )}
                   {/* Inline preview */}
                   <div style={{...S.card,padding:0,overflow:"hidden",borderRadius:8,height:500}}>
                     <iframe srcDoc={generated} style={{width:"100%",height:"100%",border:"none",borderRadius:8}} title="Media Kit Preview"/>
